@@ -1,28 +1,57 @@
-# Java / Gradle
+# ===== Java / Gradle =====
 backend/build/
 backend/.gradle/
 backend/bin/
+backend/out/
 *.class
 *.jar
 *.war
+*.ear
 
-# Node / Vite
+# Gradle wrapper (giữ lại gradlew + gradle/wrapper, bỏ cache)
+backend/.gradle/
+
+# ===== Node / Vite =====
 frontend/node_modules/
 frontend/dist/
-frontend/.env.local
-frontend/.env.production.local
+frontend/.cache/
+frontend/.parcel-cache/
 
-# IDE
+# ===== IDE =====
 .idea/
 *.iml
 .vscode/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+nbproject/
+*.sublime-*
+
+# ===== OS =====
 .DS_Store
+Thumbs.db
+Desktop.ini
+._*
 
-# Env
+# ===== Env / Secrets =====
 .env
+.env.*
+!.env.development
 *.env.local
+*.env.production.local
 
-# Docker
+# ===== Docker =====
 docker-compose.override.yml
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Temp =====
+tmp/
+*.tmp
+*.bak
+*.swp
