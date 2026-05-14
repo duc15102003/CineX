@@ -1,0 +1,12 @@
+spring:
+  profiles:
+    active: dev
+
+server:
+  port: 8088
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5IGZvciBkZXZlbG9wbWVudCBvbmx5IDEyMzQ1Njc4OTA=}
+    expiration-ms: ${JWT_EXPIRATION:900000}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}

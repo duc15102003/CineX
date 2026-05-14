@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="db/changelog/changes/001-create-users-table.xml"/>
+    <include file="db/changelog/changes/002-create-refresh-tokens-table.xml"/>
+    <include file="db/changelog/changes/003-create-id-tracker-table.xml"/>
+    <include file="db/changelog/changes/004-create-system-config-table.xml"/>
+    <include file="db/changelog/changes/005-create-audit-log-table.xml"/>
+    <include file="db/changelog/changes/006-create-genres-table.xml"/>
+    <include file="db/changelog/changes/007-create-movies-table.xml"/>
+    <include file="db/changelog/changes/008-create-rooms-table.xml"/>
+    <include file="db/changelog/changes/009-create-seats-table.xml"/>
+    <include file="db/changelog/changes/010-create-showtimes-table.xml"/>
+    <include file="db/changelog/changes/011-create-bookings-table.xml"/>
+    <include file="db/changelog/changes/012-create-payments-table.xml"/>
+    <include file="db/changelog/changes/013-seed-default-data.xml"/>
+
+</databaseChangeLog>
