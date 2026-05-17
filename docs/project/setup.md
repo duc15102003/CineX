@@ -10,19 +10,77 @@
 | Docker Compose    | 2.x       | Quản lý nhiều container cùng lúc               |
 | Git               | 2.x       | Quản lý source code                            |
 
-## 2. Cách chạy từng phần
-
-### 2.1 Chạy database và Redis bằng Docker
+### Kiểm tra đã cài chưa
 
 ```bash
-docker-compose up sqlserver redis -d
+java --version        # → openjdk 21.x.x
+node --version        # → v20.x.x hoặc cao hơn
+docker --version      # → Docker version 24.x+
+docker compose version # → Docker Compose version v2.x
+git --version         # → git version 2.x
+```
+
+---
+
+## 2. Quick Start — Clone và chạy lần đầu (5 phút)
+
+```bash
+# 1. Clone project
+git clone <repository-url>
+cd cinex
+
+# 2. Chạy database + Redis
+docker compose up sqlserver redis -d
+
+# 3. Chờ SQL Server khởi động (~10 giây), rồi tạo database
+docker exec cinex-sqlserver-1 /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P 'CineX@2026' -C \
+  -Q "CREATE DATABASE cinex"
+
+# 4. Chạy Backend
+cd backend
+./gradlew bootRun
+# Chờ thấy: "Started CineXApplication in x.x seconds"
+# Mở tab terminal mới ↓
+
+# 5. Chạy Frontend (terminal mới)
+cd frontend
+npm install
+npm run dev
+# Mở: http://localhost:5173
+
+# 6. Kiểm tra
+# Backend health: http://localhost:8088/api/health
+# Swagger UI:     http://localhost:8088/swagger-ui/index.html
+# Frontend:       http://localhost:5173
+```
+
+> **Lưu ý:** Bước 3 chỉ cần chạy 1 LẦN DUY NHẤT. Từ lần sau chỉ cần bước 2, 4, 5.
+
+---
+
+## 3. Cách chạy từng phần (chi tiết)
+
+### 3.1 Chạy database và Redis bằng Docker
+
+```bash
+docker compose up sqlserver redis -d
 ```
 
 - SQL Server chạy tại `localhost:1433` (user: `sa`, password: `CineX@2026`)
 - Redis chạy tại `localhost:6379`
-- Cần tạo database `cinex` thủ công lần đầu (dùng SQL Server Management Studio hoặc Azure Data Studio)
 
-### 2.2 Chạy Backend
+**Tạo database lần đầu:**
+
+```bash
+docker exec cinex-sqlserver-1 /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P 'CineX@2026' -C \
+  -Q "CREATE DATABASE cinex"
+```
+
+Hoặc dùng SQL Server Management Studio / Azure Data Studio kết nối `localhost:1433` rồi chạy `CREATE DATABASE cinex`.
+
+### 3.2 Chạy Backend
 
 ```bash
 cd backend
@@ -38,7 +96,7 @@ Sau khi chạy thành công:
 - Health check: `http://localhost:8088/api/health` → trả về `{"success":true,"message":"OK","data":"UP"}`
 - Swagger UI: `http://localhost:8088/swagger-ui/index.html` → giao diện test API trực quan
 
-### 2.3 Chạy Frontend
+### 3.3 Chạy Frontend
 
 ```bash
 cd frontend
@@ -48,7 +106,7 @@ npm run dev        # chạy dev server
 
 Frontend chạy tại `http://localhost:5173`.
 
-### 2.4 Chạy full stack với Docker Compose
+### 3.4 Chạy full stack với Docker Compose
 
 ```bash
 docker-compose up --build
@@ -56,7 +114,7 @@ docker-compose up --build
 
 4 services sẽ được build và chạy: SQL Server, Redis, Backend, Frontend.
 
-## 3. Cách reset DB / chạy lại Liquibase
+## 4. Cách reset DB / chạy lại Liquibase
 
 ```bash
 # Bước 1: Xóa toàn bộ volume (xóa sạch data SQL Server)
@@ -68,16 +126,16 @@ docker-compose up sqlserver redis -d
 
 Khi Backend start lại, Liquibase tự động tạo lại tất cả bảng từ đầu.
 
-## 4. Cách test API qua Swagger
+## 5. Cách test API qua Swagger
 
 1. Chạy Backend (mục 2.2)
 2. Mở `http://localhost:8088/swagger-ui/index.html`
 3. API public (không cần token): `/api/health`
 4. API cần xác thực: Click nút **"Authorize"** ở góc phải → nhập `Bearer <token>` → Click "Authorize"
 
-## 5. Cấu trúc thư mục và giải thích chi tiết từng file
+## 6. Cấu trúc thư mục và giải thích chi tiết từng file
 
-### 5.1 Backend
+### 6.1 Backend
 
 ```
 backend/
@@ -118,7 +176,7 @@ backend/
                 └── 001-create-users-table.xml  # Tạo bảng users
 ```
 
-### 5.2 Frontend
+### 6.2 Frontend
 
 ```
 frontend/
@@ -149,7 +207,7 @@ frontend/
     └── utils/                # Utility functions (thêm sau)
 ```
 
-## 6. Giải thích chi tiết từng file Backend
+## 7. Giải thích chi tiết từng file Backend
 
 ### `build.gradle` — Cấu hình dependencies
 
@@ -353,7 +411,7 @@ Tạo bảng `users` với các cột:
 3. Nhiều dev cùng làm không conflict schema
 4. An toàn cho production (ddl-auto=update có thể xóa cột, mất data)
 
-## 7. Frontend Dependencies — Giải thích từng thư viện
+## 8. Frontend Dependencies — Giải thích từng thư viện
 
 ### Runtime Dependencies (chạy trong production)
 
@@ -429,7 +487,7 @@ toast.info("Đang xử lý...");
 
 ---
 
-## 8. Giải thích chi tiết từng file Frontend
+## 9. Giải thích chi tiết từng file Frontend
 
 ### `vite.config.ts` — Cấu hình Vite
 
@@ -479,7 +537,7 @@ logout()                 // Xóa token khỏi state + localStorage
 // Tại sao lưu localStorage? → Giữ login khi refresh trang
 ```
 
-## 9. Các biến môi trường
+## 10. Các biến môi trường
 
 ### Backend
 
@@ -494,6 +552,15 @@ logout()                 // Xóa token khỏi state + localStorage
 | REDIS_PORT     | Redis port                       | 6379                | application-dev.yml        |
 | JWT_SECRET     | Khóa ký JWT (Base64)             | (dev default)       | application.yml            |
 | JWT_EXPIRATION | Thời gian sống token (ms)        | 86400000 (24 giờ)   | application.yml            |
+| MAIL_HOST      | SMTP server                      | sandbox.smtp.mailtrap.io | application-dev.yml   |
+| MAIL_PORT      | SMTP port                        | 2525                | application-dev.yml        |
+| MAIL_USERNAME  | SMTP username                    | (đăng ký Mailtrap)  | application-dev.yml        |
+| MAIL_PASSWORD  | SMTP password                    | (đăng ký Mailtrap)  | application-dev.yml        |
+| CLOUDINARY_CLOUD_NAME | Cloudinary cloud name     | (đăng ký free)      | application-dev.yml        |
+| CLOUDINARY_API_KEY    | Cloudinary API key        | (từ dashboard)      | application-dev.yml        |
+| CLOUDINARY_API_SECRET | Cloudinary API secret     | (từ dashboard)      | application-dev.yml        |
+
+> **Lưu ý:** Mail + Cloudinary chưa cần config ngay khi mới clone. Chỉ cần khi làm đến task upload ảnh (005) hoặc gửi email (009). Backend vẫn chạy bình thường nếu chưa config.
 
 ### Frontend
 
@@ -501,7 +568,7 @@ logout()                 // Xóa token khỏi state + localStorage
 |--------------------|------------------|-------------------------|-----------------------|
 | VITE_API_BASE_URL  | URL Backend API  | http://localhost:8088   | .env.development      |
 
-## 10. Docker
+## 11. Docker
 
 ### `docker-compose.yml` — 4 services
 
@@ -551,7 +618,7 @@ location /api/ {
 }
 ```
 
-## 11. CI/CD — GitHub Actions
+## 12. CI/CD — GitHub Actions
 
 ### `.github/workflows/ci.yml`
 
@@ -570,7 +637,7 @@ Trigger: push hoặc PR vào branch `main`
 4. `npm run lint` → kiểm tra code style
 5. `npm run build` → build production
 
-## 12. Xử lý lỗi thường gặp
+## 13. Xử lý lỗi thường gặp
 
 ### Lỗi kết nối SQL Server
 - Kiểm tra SQL Server đã chạy: `docker ps | grep sqlserver`
