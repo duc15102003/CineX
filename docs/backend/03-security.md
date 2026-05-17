@@ -408,3 +408,285 @@ Movie movie = movieRepo.findById(id)
     .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Movie not found"));
     // → trả 404 + "Movie not found"
 ```
+
+---
+
+## 7. Thực tế trong CineX — Tất cả file Security nằm ở đâu
+
+### Danh sách file và tác dụng
+
+```
+backend/src/main/java/com/cinex/
+├── security/
+│   ├── JwtUtil.java                ← Tạo token, parse token, verify token
+│   ├── JwtAuthFilter.java          ← Filter chạy mỗi request, kiểm tra token
+│   └── CustomUserDetailsService.java ← Load user từ DB cho Spring Security
+├── common/
+│   ├── config/
+│   │   ├── SecurityConfig.java     ← Cấu hình: URL nào public, URL nào cần auth
+│   │   └── CorsConfig.java        ← Cho phép FE gọi BE (cross-origin)
+│   └── exception/
+│       ├── ErrorCode.java          ← Enum mã lỗi (401, 403, 404, ...)
+│       ├── BusinessException.java  ← Exception nghiệp vụ
+│       └── GlobalExceptionHandler.java ← Bắt tất cả exception, trả JSON chuẩn
+└── module/auth/
+    ├── controller/AuthController.java ← API: /register, /login, /refresh
+    ├── service/AuthService.java       ← Logic: hash password, tạo token
+    ├── service/RefreshTokenService.java ← Logic: tạo/validate refresh token
+    ├── dto/RegisterRequest.java       ← Input đăng ký (có @Valid)
+    ├── dto/LoginRequest.java          ← Input đăng nhập
+    ├── dto/AuthResponse.java          ← Output: accessToken + refreshToken
+    ├── dto/RefreshTokenRequest.java   ← Input refresh token
+    ├── entity/User.java               ← Entity map bảng users
+    ├── entity/RefreshToken.java       ← Entity map bảng refresh_tokens
+    ├── entity/Role.java               ← Enum: USER, ADMIN
+    └── repository/
+        ├── UserRepository.java        ← Query bảng users
+        └── RefreshTokenRepository.java ← Query bảng refresh_tokens
+```
+
+### Luồng đăng ký — đi qua file nào?
+
+```
+Client gửi POST /api/auth/register { username, email, password }
+    │
+    ▼
+CorsFilter (CorsConfig.java)
+    → Kiểm tra origin http://localhost:5173 → OK
+    │
+    ▼
+JwtAuthFilter (JwtAuthFilter.java)
+    → Không có header Authorization → bỏ qua, đi tiếp
+    │
+    ▼
+AuthorizationFilter (SecurityConfig.java)
+    → URL /api/auth/** → permitAll → cho qua, không cần token
+    │
+    ▼
+AuthController.register() (AuthController.java)
+    → @Valid → Spring kiểm tra RegisterRequest:
+      username != blank? ✅  email đúng format? ✅  password >= 6 ký tự? ✅
+    → Sai → MethodArgumentNotValidException → GlobalExceptionHandler → 400
+    → Đúng → gọi authService.register(request)
+    │
+    ▼
+AuthService.register() (AuthService.java)
+    → userRepo.existsByUsername("testuser") → false → OK
+    → userRepo.existsByEmail("test@cinex.com") → false → OK
+    → passwordEncoder.encode("123456") → "$2a$10$xxx..." (BCrypt hash)
+    → User.builder().username("testuser").password("$2a$10$xxx...").build()
+    → userRepo.save(user) → INSERT INTO users (...) VALUES (...)
+    │
+    ▼
+AuthService.buildAuthResponse() (AuthService.java)
+    → jwtUtil.generateToken("testuser", {role: "USER"}) → "eyJhbG..." (JWT)
+    → refreshTokenService.createRefreshToken(user) → UUID + lưu DB
+    → return AuthResponse { accessToken, refreshToken, expiresIn: 900 }
+    │
+    ▼
+AuthController → ApiResponse.ok("Registration successful", authResponse)
+    │
+    ▼
+Client nhận:
+{
+    "success": true,
+    "message": "Registration successful",
+    "data": {
+        "accessToken": "eyJhbG...",
+        "refreshToken": "a1b2c3d4-...",
+        "tokenType": "Bearer",
+        "expiresIn": 900
+    }
+}
+```
+
+### Luồng đăng nhập — đi qua file nào?
+
+```
+Client gửi POST /api/auth/login { username: "testuser", password: "123456" }
+    │
+    ▼
+CorsFilter → JwtAuthFilter (bỏ qua) → AuthorizationFilter (permitAll)
+    │
+    ▼
+AuthController.login() → authService.login(request)
+    │
+    ▼
+AuthService.login()
+    → userRepo.findByUsername("testuser")
+      → Không tìm thấy? → throw BusinessException(INVALID_CREDENTIALS)
+                           → GlobalExceptionHandler → 401 "Invalid username or password"
+      → Tìm thấy user ✅
+    │
+    → passwordEncoder.matches("123456", user.getPassword())
+      → Sai password? → throw BusinessException(INVALID_CREDENTIALS) → 401
+      → Đúng password ✅
+    │
+    → user.isEnabled()?
+      → false? → throw BusinessException(FORBIDDEN, "Account is disabled") → 403
+      → true ✅
+    │
+    → buildAuthResponse(user) → tạo JWT + refresh token → trả về
+```
+
+### Luồng gọi API có xác thực — đi qua file nào?
+
+```
+Client gửi GET /api/movies
+    Header: Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoi...
+    │
+    ▼
+CorsFilter → OK
+    │
+    ▼
+JwtAuthFilter.doFilterInternal() (JwtAuthFilter.java)
+    │
+    ├── 1. String authHeader = request.getHeader("Authorization")
+    │      → "Bearer eyJhbGci..."
+    │
+    ├── 2. String token = authHeader.substring(7)
+    │      → "eyJhbGci..." (bỏ "Bearer ")
+    │
+    ├── 3. String username = jwtUtil.extractUsername(token)
+    │      → JwtUtil parse token → lấy field "sub" → "testuser"
+    │      → Nếu token sai format/hết hạn → exception → bỏ qua filter
+    │
+    ├── 4. UserDetails userDetails = userDetailsService.loadUserByUsername("testuser")
+    │      → CustomUserDetailsService.java
+    │      → userRepo.findByUsername("testuser") → tìm trong DB
+    │      → Trả về UserDetails { username, password, authorities: [ROLE_USER] }
+    │
+    ├── 5. jwtUtil.isTokenValid(token, "testuser")
+    │      → Username khớp? ✅  Token chưa hết hạn? ✅  → hợp lệ
+    │
+    └── 6. Set Authentication vào SecurityContext
+           → UsernamePasswordAuthenticationToken { principal: userDetails, authorities: [ROLE_USER] }
+           → SecurityContextHolder.getContext().setAuthentication(authToken)
+           → Từ giờ: mọi code trong request này đều biết user là "testuser", role là "USER"
+    │
+    ▼
+AuthorizationFilter (SecurityConfig.java)
+    → URL /api/movies → anyRequest().authenticated()
+    → Có Authentication trong SecurityContext? → CÓ (JwtAuthFilter vừa set) → OK ✅
+    │
+    ▼
+MovieController.getMovies()
+    → Xử lý request, trả danh sách phim
+```
+
+### Luồng khi token hết hạn
+
+```
+Phút 0:  Login → accessToken (hết hạn sau 15 phút) + refreshToken (7 ngày)
+Phút 14: Gọi API → OK (token còn hạn)
+Phút 16: Gọi API → JwtAuthFilter: token expired → KHÔNG set Authentication
+         → AuthorizationFilter: không có Authentication → 401 Unauthorized
+         │
+         ▼
+FE nhận 401 → axios response interceptor tự động:
+    → Gọi POST /api/auth/refresh { refreshToken: "a1b2c3d4-..." }
+    │
+    ▼
+AuthController.refresh() → refreshTokenService.validateRefreshToken("a1b2c3d4-...")
+    → Tìm trong DB → tồn tại + chưa revoke + chưa hết hạn → OK
+    → jwtUtil.generateToken("testuser", {role: "USER"}) → access token MỚI
+    → Trả AuthResponse { accessToken: "eyJ...(MỚI)", refreshToken: "a1b2c3d4-..." }
+    │
+    ▼
+FE nhận token mới → lưu localStorage → gọi lại API ban đầu → thành công
+User KHÔNG biết gì, KHÔNG cần login lại
+```
+
+---
+
+## 8. Ví dụ thực tế — Test bằng curl
+
+### Đăng ký
+```bash
+curl -X POST http://localhost:8088/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test@cinex.com","password":"123456","fullName":"Test User"}'
+```
+
+### Đăng nhập
+```bash
+curl -X POST http://localhost:8088/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"123456"}'
+```
+
+### Gọi API có token
+```bash
+# Lấy token từ response login, thay vào đây
+TOKEN="eyJhbGci..."
+
+curl http://localhost:8088/api/health \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Gọi API không có token → 401
+```bash
+curl http://localhost:8088/api/health
+# → Nếu /api/health là permitAll → vẫn OK
+# Thử URL cần auth (khi có):
+curl http://localhost:8088/api/users/me
+# → 401 Unauthorized
+```
+
+### Refresh token
+```bash
+curl -X POST http://localhost:8088/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"a1b2c3d4-xxxx-yyyy-zzzz"}'
+```
+
+### Đăng ký trùng username → 409
+```bash
+curl -X POST http://localhost:8088/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test2@cinex.com","password":"123456"}'
+# → { "success": false, "message": "Username already exists" }
+```
+
+### Đăng nhập sai password → 401
+```bash
+curl -X POST http://localhost:8088/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"wrongpass"}'
+# → { "success": false, "message": "Invalid username or password" }
+```
+
+### Validation lỗi → 400
+```bash
+curl -X POST http://localhost:8088/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"","email":"abc","password":"12"}'
+# → { "success": false, "message": "username: Username is required; email: Invalid email format; password: Password must be between 6 and 100 characters" }
+```
+
+---
+
+## 9. Khi nào cần sửa file nào?
+
+| Tình huống | File cần sửa |
+|---|---|
+| Thêm URL public mới (VD: `/api/movies` cho phép xem không cần login) | `SecurityConfig.java` → thêm vào `PUBLIC_URLS` |
+| Thêm role mới (VD: STAFF) | `Role.java` → thêm enum. `SecurityConfig.java` → thêm `@PreAuthorize` |
+| Sửa thời gian hết hạn token | `application.yml` → `app.jwt.expiration-ms` |
+| Cho phép FE ở domain khác gọi API | `CorsConfig.java` → thêm vào `setAllowedOrigins` |
+| Thêm loại lỗi mới | `ErrorCode.java` → thêm enum |
+| Thêm validation cho DTO mới | DTO class → thêm `@NotBlank`, `@Size`, ... |
+
+---
+
+## 10. Câu hỏi tự kiểm tra
+
+1. **JWT có mã hóa payload không?** → Không, chỉ Base64 encode. Ai cũng đọc được. An toàn nhờ signature.
+
+2. **Tại sao tắt CSRF khi dùng JWT?** → CSRF tấn công qua cookie. JWT gửi qua header, không dùng cookie → không bị CSRF.
+
+3. **User A có token, gửi cho User B. B dùng được không?** → Được, trong 15 phút. Vì JWT stateless, server không biết ai đang cầm token. Đây là lý do access token phải ngắn hạn.
+
+4. **Nếu bỏ `@Valid` trong Controller, điều gì xảy ra?** → Request không được validate → data sai vào Service → có thể gây lỗi DB (VD: username null → SQL error) hoặc lỗi logic.
+
+5. **Tại sao `passwordEncoder.matches()` chứ không phải `equals()`?** → BCrypt hash có salt ngẫu nhiên, cùng password hash 2 lần ra 2 kết quả KHÁC nhau. `matches()` tách salt + hash lại + so sánh. `equals()` so sánh string → luôn sai.

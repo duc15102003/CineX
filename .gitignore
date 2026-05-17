@@ -55,3 +55,6 @@ tmp/
 *.tmp
 *.bak
 *.swp
+
+# Task management (private, không push)
+tasks/

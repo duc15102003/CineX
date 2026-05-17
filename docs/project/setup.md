@@ -166,6 +166,9 @@ frontend/
 | `mapstruct` | Tự động sinh code chuyển đổi Entity ↔ DTO (giảm boilerplate) |
 | `lombok` | Tự sinh getter/setter/constructor/builder (giảm boilerplate) |
 | `lombok-mapstruct-binding` | Cho Lombok và MapStruct hoạt động cùng nhau khi compile |
+| `spring-boot-starter-mail` | Gửi email (xác nhận vé, reset password, thông báo) |
+| `cloudinary-http5` | Upload + quản lý ảnh trên cloud (poster phim, avatar user) |
+| `zxing-core` + `zxing-javase` | Sinh QR code dạng ảnh (nhúng vào email vé, export PDF) |
 | `springdoc-openapi-starter-webmvc-ui` | Tự sinh Swagger UI từ code, test API trên trình duyệt |
 | `spring-boot-starter-test` | JUnit 5 + Mockito để viết unit test |
 | `spring-security-test` | Hỗ trợ test với Spring Security (mock user, mock auth) |
@@ -350,7 +353,83 @@ Tạo bảng `users` với các cột:
 3. Nhiều dev cùng làm không conflict schema
 4. An toàn cho production (ddl-auto=update có thể xóa cột, mất data)
 
-## 7. Giải thích chi tiết từng file Frontend
+## 7. Frontend Dependencies — Giải thích từng thư viện
+
+### Runtime Dependencies (chạy trong production)
+
+| Thư viện | Version | Tác dụng |
+|---|---|---|
+| `react` | ^19.2.5 | UI framework — component-based, virtual DOM |
+| `react-dom` | ^19.2.5 | Render React component lên trình duyệt (DOM) |
+| `react-router-dom` | ^7.15.0 | Routing phía client — chuyển trang không reload |
+| `@tanstack/react-query` | ^5.100.9 | Quản lý server state — fetch, cache, refetch tự động |
+| `zustand` | ^5.0.13 | Quản lý client state (auth token, UI state) — nhẹ hơn Redux |
+| `axios` | ^1.16.0 | HTTP client — tạo request, interceptor gắn JWT tự động |
+| `react-hook-form` | ^7.75.0 | Quản lý form — giảm re-render, validation, error handling |
+| `@hookform/resolvers` | ^5.2.2 | Cầu nối react-hook-form + Zod (schema validation) |
+| `zod` | ^4.4.3 | Schema validation — khai báo rule validate 1 chỗ, dùng cho form + API |
+| `sonner` | ^2.0.7 | Toast notification — hiển thị thông báo success/error/info dạng popup |
+| `class-variance-authority` | ^0.7.1 | Tạo variant CSS cho component (VD: Button có 6 variant + 3 size) |
+| `clsx` | ^2.1.1 | Gộp className có điều kiện: `clsx('btn', isActive && 'active')` |
+| `tailwind-merge` | ^3.6.0 | Merge Tailwind class thông minh — loại bỏ conflict (VD: `p-2 p-4` → `p-4`) |
+| `lucide-react` | ^1.16.0 | Bộ icon SVG — nhẹ, tree-shakable, 1500+ icon |
+| `react-qr-code` | latest | Render QR code trên màn hình (vé điện tử, check-in) |
+| `recharts` | latest | Biểu đồ thống kê cho Admin Dashboard (bar, line, pie chart) |
+
+### Dev Dependencies (chỉ dùng khi phát triển)
+
+| Thư viện | Version | Tác dụng |
+|---|---|---|
+| `vite` | ^8.0.10 | Build tool siêu nhanh — dev server HMR, bundle production |
+| `@vitejs/plugin-react` | ^6.0.1 | Vite plugin cho React — Fast Refresh (sửa code thấy ngay) |
+| `tailwindcss` | ^4.2.4 | CSS framework utility-first — viết class thay vì viết CSS |
+| `@tailwindcss/vite` | ^4.2.4 | Tailwind v4 tích hợp Vite (không cần postcss.config riêng) |
+| `typescript` | ~6.0.2 | Type safety — phát hiện lỗi lúc code, không cần chạy |
+| `@types/react` | ^19.2.14 | TypeScript definitions cho React API |
+| `@types/react-dom` | ^19.2.3 | TypeScript definitions cho React DOM |
+| `@types/node` | ^24.12.4 | TypeScript definitions cho Node.js (`path` dùng trong vite.config) |
+| `eslint` | ^10.2.1 | Linter — phát hiện lỗi logic, code smell |
+| `typescript-eslint` | ^8.58.2 | ESLint rules dành riêng cho TypeScript |
+| `eslint-plugin-react-hooks` | ^7.1.1 | Kiểm tra rules of hooks (deps array, gọi đúng chỗ) |
+| `eslint-plugin-react-refresh` | ^0.5.2 | Đảm bảo HMR hoạt động đúng (component export) |
+| `eslint-config-prettier` | ^10.1.8 | Tắt ESLint rules xung đột với Prettier |
+| `eslint-plugin-prettier` | ^5.5.5 | Chạy Prettier như một rule ESLint |
+| `prettier` | ^3.8.3 | Code formatter — đồng bộ style code trong team |
+| `globals` | ^17.5.0 | Khai báo biến global cho ESLint config |
+
+### Hàm tiện ích `cn()` — Kết hợp clsx + tailwind-merge
+
+```ts
+// src/lib/utils.ts
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// Cách dùng:
+cn("px-4 py-2", isActive && "bg-blue-500", className)
+// → gộp class, loại bỏ conflict, bỏ qua giá trị false/undefined
+```
+
+### Sonner — Toast notification
+
+```tsx
+// Khai báo 1 lần trong App.tsx:
+import { Toaster } from "@/components/ui/sonner";
+<Toaster position="top-right" richColors duration={3000} />
+
+// Gọi bất kỳ đâu trong app:
+import { toast } from "sonner";
+toast.success("Đăng ký thành công!");
+toast.error("Email đã tồn tại");
+toast.info("Đang xử lý...");
+```
+
+---
+
+## 8. Giải thích chi tiết từng file Frontend
 
 ### `vite.config.ts` — Cấu hình Vite
 
@@ -400,7 +479,7 @@ logout()                 // Xóa token khỏi state + localStorage
 // Tại sao lưu localStorage? → Giữ login khi refresh trang
 ```
 
-## 8. Các biến môi trường
+## 9. Các biến môi trường
 
 ### Backend
 
@@ -422,7 +501,7 @@ logout()                 // Xóa token khỏi state + localStorage
 |--------------------|------------------|-------------------------|-----------------------|
 | VITE_API_BASE_URL  | URL Backend API  | http://localhost:8088   | .env.development      |
 
-## 9. Docker
+## 10. Docker
 
 ### `docker-compose.yml` — 4 services
 
@@ -472,7 +551,7 @@ location /api/ {
 }
 ```
 
-## 10. CI/CD — GitHub Actions
+## 11. CI/CD — GitHub Actions
 
 ### `.github/workflows/ci.yml`
 
@@ -491,7 +570,7 @@ Trigger: push hoặc PR vào branch `main`
 4. `npm run lint` → kiểm tra code style
 5. `npm run build` → build production
 
-## 11. Xử lý lỗi thường gặp
+## 12. Xử lý lỗi thường gặp
 
 ### Lỗi kết nối SQL Server
 - Kiểm tra SQL Server đã chạy: `docker ps | grep sqlserver`
