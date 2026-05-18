@@ -107,7 +107,7 @@ File quan trọng nhất. Giống như `build.gradle` của Java. Mô tả dự 
 ## 2. package-lock.json — "Hóa đơn chi tiết"
 
 ### Là gì?
-File **tự sinh** khi ch��y `npm install`. Ghi lại version CHÍNH XÁC của mọi thư viện (kể cả sub-dependencies).
+File **tự sinh** khi chạy `npm install`. Ghi lại version CHÍNH XÁC của mọi thư viện (kể cả sub-dependencies).
 
 ### Tại sao cần?
 

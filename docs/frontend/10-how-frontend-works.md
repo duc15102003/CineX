@@ -56,7 +56,7 @@
 WEB TRUYỀN THỐNG (Server-Side Rendering):
 ────────────────────────────────────────
 User click "Phim" → Trình duyệt gửi request → Server trả HTML mới → Trang TRẮNG rồi load lại
-User click "��ặt vé" → Trình duyệt gửi request → Server trả HTML mới → Trang TRẮNG rồi load lại
+User click "Đặt vé" → Trình duyệt gửi request → Server trả HTML mới → Trang TRẮNG rồi load lại
 → Mỗi lần chuyển trang = TẢI LẠI TOÀN BỘ (chậm, nhấp nháy)
 
 SPA (React):
@@ -83,7 +83,7 @@ User click "Đặt vé" → JavaScript đổi nội dung → KHÔNG TẢI LẠI 
 </body>
 ```
 
-Mọi thứ user th��y (header, danh sách phim, form đặt vé, ...) đều ��ược JavaScript **sinh ra động** bên trong `<div id="root">`.
+Mọi thứ user thấy (header, danh sách phim, form đặt vé, ...) đều được JavaScript **sinh ra động** bên trong `<div id="root">`.
 
 ---
 
@@ -172,7 +172,7 @@ function MovieCard({ title, poster, rating }) {
 ```
 App                              ← Gốc (root)
 ├── QueryClientProvider          ← Provider (cung cấp context)
-��── AppRouter                    ← Router
+├── AppRouter                    ← Router
 │   └── HomePage                 ← Trang chủ
 │       ├── Header               ← Header navigation
 │       │   ├── Logo
@@ -202,7 +202,7 @@ App                              ← Gốc (root)
 
 ### JSX là gì?
 
-Cú pháp đặc biệt cho phép viết **HTML bên trong JavaScript**. Trình duyệt KHÔNG hi��u JSX — Vite compile thành JavaScript thuần.
+Cú pháp đặc biệt cho phép viết **HTML bên trong JavaScript**. Trình duyệt KHÔNG hiểu JSX — Vite compile thành JavaScript thuần.
 
 ```tsx
 // BẠN VIẾT (JSX):
@@ -259,7 +259,7 @@ function MovieCard({ movie }) {
 
 ### State là gì?
 
-**Biến đặc biệt** của React. Khi state thay đổi → React **tự ��ộng render lại** component → UI cập nhật.
+**Biến đặc biệt** của React. Khi state thay đổi → React **tự động render lại** component → UI cập nhật.
 
 ### Ví dụ đời thường
 
@@ -374,16 +374,16 @@ Trình duyệt chỉ repaint phần nhỏ → NHANH
 
 ### Trong CineX
 
-User chọn thêm 1 gh��� → React CHỈ cập nhật:
+User chọn thêm 1 ghế → React CHỈ cập nhật:
 - 1 ô ghế đổi màu (xanh lá)
 - 1 dòng text "Đã chọn: 3 ghế"
 - 1 số tiền tổng
 
-KHÔNG render l���i: header, footer, sơ đồ 200 ghế khác, poster phim, ...
+KHÔNG render lại: header, footer, sơ đồ 200 ghế khác, poster phim, ...
 
 ---
 
-## 8. Props ��� Truyền dữ liệu giữa component
+## 8. Props — Truyền dữ liệu giữa component
 
 ### Props là gì?
 
@@ -476,7 +476,7 @@ MovieDetailPage render → gọi API lấy phim id=5 → hiện chi tiết
 ```
 ①  User nhập username + password → click "Đăng nhập"
          │
-②       ▼ React g��i: api.post('/api/auth/login', { username, password })
+②       ▼ React gọi: api.post('/api/auth/login', { username, password })
          │
 ③       ▼ Axios interceptor gắn header Content-Type: application/json
          │
@@ -486,10 +486,10 @@ MovieDetailPage render → gọi API lấy phim id=5 → hiện chi tiết
          │
          │ ═══════ NETWORK (localhost) ═══════
          │
-⑤       ▼ Backend Spring Boot nh��n request
+⑤       ▼ Backend Spring Boot nhận request
          │   → AuthController.login()
          │   → AuthService.authenticate()
-         │   → check DB, hash password, t��o JWT
+         │   → check DB, hash password, tạo JWT
          │
 ⑥       ▼ Backend trả response:
          │   {
@@ -502,7 +502,7 @@ MovieDetailPage render → gọi API lấy phim id=5 → hiện chi tiết
          │
          │ ═══════ NETWORK ═══════
          │
-⑦       ▼ Axios nh���n response → trả về cho React
+⑦       ▼ Axios nhận response → trả về cho React
          │
 ⑧       ▼ React lưu token: authStore.setToken(accessToken)
          │   → localStorage.setItem('token', accessToken)
@@ -535,7 +535,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// RESPONSE INTERCEPTOR: chạy SAU M���I response nhận về
+// RESPONSE INTERCEPTOR: chạy SAU MỖI response nhận về
 api.interceptors.response.use(
   (response) => response,  // Thành công → trả về bình thường
   (error) => {
@@ -606,7 +606,7 @@ useQuery kiểm tra cache: có data cho key ['movies'] không?
      │
      ├── CÓ cache (fresh) → trả data NGAY LẬP TỨC (0ms)
      │
-     └── KHÔNG có / cache stale → g��i queryFn (API call)
+     └── KHÔNG có / cache stale → gọi queryFn (API call)
               │
               ▼
          isLoading = true → hiện Skeleton
@@ -643,7 +643,7 @@ TanStack Query = **tủ lạnh thông minh**:
 
 ---
 
-## 12. Zustand �� State toàn cục (Global State)
+## 12. Zustand — State toàn cục (Global State)
 
 ### Vấn đề: State cần chia sẻ giữa nhiều component
 
@@ -790,7 +790,7 @@ className="rounded-lg p-4 shadow-md text-lg font-bold text-gray-900"
 │  └───────────┬───────────┘    │ (server data cache)           │  │
 │              │                └──────────────┬────────────────┘  │
 │              │                               │                   │
-│  ┌────��──────▼───────────────────────────────▼───��────────────┐  │
+│  ┌─────────────▼───────────────────────────────▼──────────────┐  │
 │  │                    COMPONENTS                               │  │
 │  │                                                            │  │
 │  │  Header ← đọc Zustand (token → hiện tên/nút login)        │  │
@@ -799,7 +799,7 @@ className="rounded-lg p-4 shadow-md text-lg font-bold text-gray-900"
 │  │           + useState local (selectedSeats → highlight)     │  │
 │  │                                                            │  │
 │  └───────────────────────────────┬────────────────────────────┘  │
-│                                  �� Axios (khi cần data mới)      │
+│                                  ▼ Axios (khi cần data mới)      │
 │                                  │ • request interceptor: +token │
 │                                  │ • response interceptor: 401→login│
 └──────────────────────────────────┼───────────────────────────────┘
@@ -849,7 +849,7 @@ npm run build
        │
 4.     ▼ Tree-shaking: xóa code KHÔNG DÙNG (VD: icon không import)
        │
-5.     ▼ Minify: xóa khoảng trắng, đổi tên biến ng��n (a,b,c)
+5.     ▼ Minify: xóa khoảng trắng, đổi tên biến ngắn (a,b,c)
        │
 6.     ▼ Code-splitting: chia thành chunks (load khi cần)
        │
@@ -858,7 +858,7 @@ npm run build
               ├── assets/
               │   ├── index-a1b2c3.js (≈300KB — code app)
               │   ├── vendor-d4e5f6.js (≈200KB — thư viện React, ...)
-              │   └── index-g7h8i9.css (≈50KB �� Tailwind compiled)
+              │   └── index-g7h8i9.css (≈50KB — Tailwind compiled)
               └── favicon.svg
 ```
 
@@ -895,7 +895,7 @@ npm run build
 │  React (UI framework)                                               │
 │  ├── Component: function → JSX → UI                                 │
 │  ├── State: useState (local) + Zustand (global)                     │
-│  ├��─ Props: cha → con (read-only)                                   │
+│  ├── Props: cha → con (read-only)                                   │
 │  ├── Virtual DOM: diff → update phần thay đổi                       │
 │  └── Re-render: state/props đổi → UI tự update                     │
 │       │                                                             │
@@ -938,6 +938,6 @@ npm run build
 
 5. **Axios interceptor hoạt động thế nào?** Token được gắn vào request ở đâu? Khi nào user bị đá về /login?
 
-6. **TanStack Query cache hoạt động thế nào?** N���u 3 component cùng gọi useQuery(['movies']), API bị gọi mấy lần?
+6. **TanStack Query cache hoạt động thế nào?** Nếu 3 component cùng gọi useQuery(['movies']), API bị gọi mấy lần?
 
 7. **npm run build tạo ra gì?** Tại sao file production nhỏ hơn nhiều so với code dev?
