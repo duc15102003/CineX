@@ -10,6 +10,7 @@ import lombok.Getter;
 public class SeatResponse {
 
     private Long id;
+    private String storageState;
     private String rowLabel;
     private Integer colNumber;
     private String seatNumber;

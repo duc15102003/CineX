@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,5 +55,24 @@ public class SeatController {
             @PathVariable Long seatId,
             @RequestBody UpdateSeatRequest request) {
         return ApiResponse.ok("Seat updated", seatService.updateSeat(seatId, request));
+    }
+
+    @DeleteMapping("/{seatId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Soft delete a seat")
+    public ApiResponse<Void> deleteSeat(
+            @PathVariable Long roomId,
+            @PathVariable Long seatId) {
+        seatService.deleteSeat(seatId);
+        return ApiResponse.ok("Seat deleted", null);
+    }
+
+    @PostMapping("/{seatId}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Restore a soft-deleted seat")
+    public ApiResponse<SeatResponse> restoreSeat(
+            @PathVariable Long roomId,
+            @PathVariable Long seatId) {
+        return ApiResponse.ok("Seat restored", seatService.restoreSeat(seatId));
     }
 }

@@ -2,7 +2,6 @@ package com.cinex.module.user.service;
 
 import com.cinex.common.exception.BusinessException;
 import com.cinex.common.exception.ErrorCode;
-import com.cinex.common.response.PageResponse;
 import com.cinex.common.service.FileUploadService;
 import com.cinex.common.util.SecurityUtil;
 import com.cinex.module.auth.entity.User;
@@ -10,8 +9,10 @@ import com.cinex.module.auth.repository.UserRepository;
 import com.cinex.module.user.dto.ChangePasswordRequest;
 import com.cinex.module.user.dto.UpdateProfileRequest;
 import com.cinex.module.user.dto.UpdateRoleRequest;
+import com.cinex.module.user.dto.UserFilter;
 import com.cinex.module.user.dto.UserProfileResponse;
 import com.cinex.module.user.mapper.UserMapper;
+import com.cinex.module.user.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -110,14 +111,13 @@ public class UserService {
     }
 
     /**
-     * (ADMIN) Lấy danh sách user có phân trang.
-     * Dùng PageResponse.from() để wrap kết quả Page<UserProfileResponse>.
+     * (ADMIN) Danh sách user — Filter DTO + Specification, thống nhất với mọi module.
      */
     @Transactional(readOnly = true)
-    public PageResponse<UserProfileResponse> listUsers(Pageable pageable) {
-        Page<UserProfileResponse> page = userRepository.findAll(pageable)
+    public Page<UserProfileResponse> listUsers(UserFilter filter, Pageable pageable) {
+        var spec = UserSpecification.fromFilter(filter);
+        return userRepository.findAll(spec, pageable)
                 .map(userMapper::toProfileResponse);
-        return PageResponse.from(page);
     }
 
     /**

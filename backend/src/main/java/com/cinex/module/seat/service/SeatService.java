@@ -137,4 +137,23 @@ public class SeatService {
         log.info("Updated seat {}: type={}, status={}", seat.getSeatNumber(), seat.getSeatType(), seat.getStatus());
         return seatMapper.toResponse(seat);
     }
+
+    @Transactional
+    public void deleteSeat(Long seatId) {
+        Seat seat = seatRepository.findById(seatId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SEAT_NOT_FOUND));
+        seat.setStorageState("DELETED");
+        seatRepository.save(seat);
+        log.info("Soft deleted seat: {}", seat.getSeatNumber());
+    }
+
+    @Transactional
+    public SeatResponse restoreSeat(Long seatId) {
+        Seat seat = seatRepository.findById(seatId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SEAT_NOT_FOUND));
+        seat.setStorageState(null);
+        seatRepository.save(seat);
+        log.info("Restored seat: {}", seat.getSeatNumber());
+        return seatMapper.toResponse(seat);
+    }
 }

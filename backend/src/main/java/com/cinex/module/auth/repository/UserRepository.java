@@ -2,11 +2,12 @@ package com.cinex.module.auth.repository;
 
 import com.cinex.module.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
     // Dùng cho login + SecurityContext → PHẢI filter DELETED (user đã xóa không được login)
     @Query("SELECT u FROM User u WHERE u.username = :username AND (u.storageState IS NULL OR u.storageState <> 'DELETED')")

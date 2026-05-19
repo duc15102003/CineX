@@ -5,6 +5,7 @@ import com.cinex.common.response.PageResponse;
 import com.cinex.module.user.dto.ChangePasswordRequest;
 import com.cinex.module.user.dto.UpdateProfileRequest;
 import com.cinex.module.user.dto.UpdateRoleRequest;
+import com.cinex.module.user.dto.UserFilter;
 import com.cinex.module.user.dto.UserProfileResponse;
 import com.cinex.module.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,15 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * Controller quản lý user profile.
- *
- * Nguyên tắc: Controller CHỈ nhận request → gọi service → trả ApiResponse.
- * KHÔNG chứa business logic (validation password, check role, ...) → để trong Service.
- *
- * [Chain of Responsibility] Request đi qua:
- * JwtAuthFilter → SecurityConfig → @PreAuthorize → Controller → Service → Repository → DB
- */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -68,12 +60,16 @@ public class UserController {
 
     // ===== ADMIN APIs =====
 
+    /**
+     * GET /api/users?keyword=vanan&role=ADMIN&enabled=true&includeDeleted=false&page=0&size=20
+     */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "(Admin) List all users with pagination")
+    @Operation(summary = "(Admin) List users with filter")
     public ApiResponse<PageResponse<UserProfileResponse>> listUsers(
+            UserFilter filter,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.ok(userService.listUsers(pageable));
+        return ApiResponse.ok(PageResponse.from(userService.listUsers(filter, pageable)));
     }
 
     @PutMapping("/{id}/role")
