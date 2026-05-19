@@ -2,10 +2,10 @@ package com.cinex.module.movie.controller;
 
 import com.cinex.common.response.ApiResponse;
 import com.cinex.common.response.PageResponse;
+import com.cinex.module.movie.dto.MovieFilter;
 import com.cinex.module.movie.dto.MovieListResponse;
 import com.cinex.module.movie.dto.MovieRequest;
 import com.cinex.module.movie.dto.MovieResponse;
-import com.cinex.module.movie.entity.MovieStatus;
 import com.cinex.module.movie.service.MovieService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,15 +33,16 @@ public class MovieController {
 
     private final MovieService movieService;
 
+    /**
+     * Spring tự bind query params vào MovieFilter DTO:
+     * GET /api/movies?keyword=Avengers&status=NOW_SHOWING&genreId=1&includeDeleted=true&page=0&size=20
+     */
     @GetMapping
     @Operation(summary = "List movies with search and filter")
     public ApiResponse<PageResponse<MovieListResponse>> listMovies(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) MovieStatus status,
-            @RequestParam(required = false) Long genreId,
-            @RequestParam(defaultValue = "false") boolean includeDeleted,
+            MovieFilter filter,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.ok(movieService.listMovies(keyword, status, genreId, includeDeleted, pageable));
+        return ApiResponse.ok(movieService.listMovies(filter, pageable));
     }
 
     @GetMapping("/{id}")

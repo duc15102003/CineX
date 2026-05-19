@@ -2,17 +2,19 @@ package com.cinex.module.movie.service;
 
 import com.cinex.common.exception.BusinessException;
 import com.cinex.common.exception.ErrorCode;
+import com.cinex.module.movie.dto.GenreFilter;
 import com.cinex.module.movie.dto.GenreRequest;
 import com.cinex.module.movie.dto.GenreResponse;
 import com.cinex.module.movie.entity.Genre;
 import com.cinex.module.movie.mapper.GenreMapper;
 import com.cinex.module.movie.repository.GenreRepository;
+import com.cinex.module.movie.specification.GenreSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,12 +24,14 @@ public class GenreService {
     private final GenreRepository genreRepository;
     private final GenreMapper genreMapper;
 
+    /**
+     * Pattern thống nhất: Filter DTO → Specification.fromFilter() → findAll(spec, pageable)
+     */
     @Transactional(readOnly = true)
-    public List<GenreResponse> listGenres(boolean includeDeleted) {
-        List<Genre> genres = includeDeleted
-                ? genreRepository.findAll()
-                : genreRepository.findAllActive();
-        return genres.stream().map(genreMapper::toResponse).toList();
+    public Page<GenreResponse> listGenres(GenreFilter filter, Pageable pageable) {
+        var spec = GenreSpecification.fromFilter(filter);
+        return genreRepository.findAll(spec, pageable)
+                .map(genreMapper::toResponse);
     }
 
     @Transactional

@@ -1,6 +1,8 @@
 package com.cinex.module.room.controller;
 
 import com.cinex.common.response.ApiResponse;
+import com.cinex.common.response.PageResponse;
+import com.cinex.module.room.dto.RoomFilter;
 import com.cinex.module.room.dto.RoomRequest;
 import com.cinex.module.room.dto.RoomResponse;
 import com.cinex.module.room.service.RoomService;
@@ -8,6 +10,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,10 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -29,11 +30,16 @@ public class RoomController {
 
     private final RoomService roomService;
 
+    /**
+     * GET /api/rooms?keyword=Room&type=IMAX&status=ACTIVE&includeDeleted=false&page=0&size=20
+     * Spring tự bind query params vào RoomFilter DTO.
+     */
     @GetMapping
-    @Operation(summary = "List all rooms (includeDeleted=true to show deleted)")
-    public ApiResponse<List<RoomResponse>> listRooms(
-            @RequestParam(defaultValue = "false") boolean includeDeleted) {
-        return ApiResponse.ok(roomService.listRooms(includeDeleted));
+    @Operation(summary = "List rooms with filter")
+    public ApiResponse<PageResponse<RoomResponse>> listRooms(
+            RoomFilter filter,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.ok(PageResponse.from(roomService.listRooms(filter, pageable)));
     }
 
     @GetMapping("/{id}")

@@ -2,18 +2,20 @@ package com.cinex.module.room.service;
 
 import com.cinex.common.exception.BusinessException;
 import com.cinex.common.exception.ErrorCode;
+import com.cinex.module.room.dto.RoomFilter;
 import com.cinex.module.room.dto.RoomRequest;
 import com.cinex.module.room.dto.RoomResponse;
 import com.cinex.module.room.entity.Room;
 import com.cinex.module.room.entity.RoomStatus;
 import com.cinex.module.room.mapper.RoomMapper;
 import com.cinex.module.room.repository.RoomRepository;
+import com.cinex.module.room.specification.RoomSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,23 +26,15 @@ public class RoomService {
     private final RoomMapper roomMapper;
 
     /**
-     * Danh sách phòng.
-     * includeDeleted = false (mặc định): chỉ trả phòng chưa xóa (filter SQL)
-     * includeDeleted = true: trả tất cả kể cả đã xóa (admin xem lại + khôi phục)
+     * Pattern thống nhất: Filter DTO → Specification.fromFilter() → findAll(spec, pageable)
      */
     @Transactional(readOnly = true)
-    public List<RoomResponse> listRooms(boolean includeDeleted) {
-        List<Room> rooms = includeDeleted
-                ? roomRepository.findAll()
-                : roomRepository.findAllActive();
-        return rooms.stream().map(roomMapper::toResponse).toList();
+    public Page<RoomResponse> listRooms(RoomFilter filter, Pageable pageable) {
+        var spec = RoomSpecification.fromFilter(filter);
+        return roomRepository.findAll(spec, pageable)
+                .map(roomMapper::toResponse);
     }
 
-    /**
-     * Chi tiết phòng — trả về bình thường, KHÔNG filter DELETED.
-     * Lý do: list đã control hiển thị, user click từ list → phải thấy chi tiết.
-     * FE tự xử lý hiển thị dựa vào storageState trong response.
-     */
     @Transactional(readOnly = true)
     public RoomResponse getRoom(Long id) {
         Room room = roomRepository.findById(id)
@@ -98,9 +92,6 @@ public class RoomService {
         log.info("Soft deleted room: {}", room.getName());
     }
 
-    /**
-     * (ADMIN) Khôi phục phòng đã xóa mềm.
-     */
     @Transactional
     public RoomResponse restoreRoom(Long id) {
         Room room = roomRepository.findById(id)

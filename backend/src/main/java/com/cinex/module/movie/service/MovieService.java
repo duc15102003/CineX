@@ -4,12 +4,12 @@ import com.cinex.common.exception.BusinessException;
 import com.cinex.common.exception.ErrorCode;
 import com.cinex.common.response.PageResponse;
 import com.cinex.common.service.FileUploadService;
+import com.cinex.module.movie.dto.MovieFilter;
 import com.cinex.module.movie.dto.MovieListResponse;
 import com.cinex.module.movie.dto.MovieRequest;
 import com.cinex.module.movie.dto.MovieResponse;
 import com.cinex.module.movie.entity.Genre;
 import com.cinex.module.movie.entity.Movie;
-import com.cinex.module.movie.entity.MovieStatus;
 import com.cinex.module.movie.mapper.MovieMapper;
 import com.cinex.module.movie.repository.GenreRepository;
 import com.cinex.module.movie.repository.MovieRepository;
@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,38 +36,17 @@ public class MovieService {
     private final FileUploadService fileUploadService;
 
     /**
-     * Danh sách phim — Specification Pattern ghép filter động.
-     * includeDeleted = false (mặc định): filter DELETED ở SQL
-     * includeDeleted = true: trả hết (admin xem phim đã xóa)
+     * Danh sách phim — nhận Filter DTO, build Specification tự động.
+     * Pattern thống nhất: Filter DTO → Specification.fromFilter() → findAll(spec, pageable)
      */
     @Transactional(readOnly = true)
-    public PageResponse<MovieListResponse> listMovies(String keyword, MovieStatus status,
-                                                       Long genreId, boolean includeDeleted,
-                                                       Pageable pageable) {
-        Specification<Movie> spec = Specification.where(null);
-
-        if (!includeDeleted) {
-            spec = spec.and(MovieSpecification.notDeleted());
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            spec = spec.and(MovieSpecification.hasTitle(keyword));
-        }
-        if (status != null) {
-            spec = spec.and(MovieSpecification.hasStatus(status));
-        }
-        if (genreId != null) {
-            spec = spec.and(MovieSpecification.hasGenre(genreId));
-        }
-
+    public PageResponse<MovieListResponse> listMovies(MovieFilter filter, Pageable pageable) {
+        var spec = MovieSpecification.fromFilter(filter);
         Page<MovieListResponse> page = movieRepository.findAll(spec, pageable)
                 .map(movieMapper::toListResponse);
         return PageResponse.from(page);
     }
 
-    /**
-     * Chi tiết phim — trả về bình thường, KHÔNG filter DELETED.
-     * FE tự xử lý hiển thị dựa vào storageState trong response.
-     */
     @Transactional(readOnly = true)
     public MovieResponse getMovie(Long id) {
         Movie movie = movieRepository.findById(id)
