@@ -32,7 +32,7 @@ public class FileUploadService {
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             "image/jpeg", "image/png", "image/webp"
     );
-    private static final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (poster phim lớn hơn avatar)
 
     /**
      * Upload ảnh lên Cloudinary, trả về URL public.
@@ -72,6 +72,41 @@ public class FileUploadService {
         }
     }
 
+    /**
+     * Xóa ảnh cũ trên Cloudinary khi cập nhật poster/avatar mới.
+     *
+     * @param imageUrl URL ảnh cần xóa (VD: https://res.cloudinary.com/.../cinex/posters/abc123.jpg)
+     *
+     * Tại sao cần xóa ảnh cũ?
+     * → Mỗi lần upload poster mới, ảnh cũ vẫn nằm trên Cloudinary → tốn storage
+     * → Xóa ảnh cũ = giữ storage sạch, không lãng phí free tier
+     *
+     * Cách lấy public_id từ URL:
+     * URL: https://res.cloudinary.com/cinex/image/upload/v123/cinex/posters/abc123.jpg
+     * public_id: cinex/posters/abc123 (bỏ domain + /upload/vXXX/ + đuôi file)
+     */
+    public void deleteImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+
+        try {
+            // Trích public_id từ URL: lấy phần sau "/upload/vXXX/" và bỏ đuôi file
+            String[] parts = imageUrl.split("/upload/");
+            if (parts.length < 2) return;
+
+            String pathWithVersion = parts[1]; // "v123/cinex/posters/abc123.jpg"
+            // Bỏ version prefix (v123/)
+            String pathAfterVersion = pathWithVersion.substring(pathWithVersion.indexOf('/') + 1);
+            // Bỏ đuôi file (.jpg, .png, ...)
+            String publicId = pathAfterVersion.substring(0, pathAfterVersion.lastIndexOf('.'));
+
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            log.info("Deleted image from Cloudinary: {}", publicId);
+        } catch (Exception e) {
+            // Xóa ảnh thất bại không nên làm crash request chính
+            log.warn("Failed to delete image from Cloudinary: {}", imageUrl, e);
+        }
+    }
+
     private void validateImage(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_FILE, "File is empty");
@@ -82,7 +117,7 @@ public class FileUploadService {
         }
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new BusinessException(ErrorCode.INVALID_FILE,
-                    "File size must not exceed 2MB");
+                    "File size must not exceed 5MB");
         }
     }
 }

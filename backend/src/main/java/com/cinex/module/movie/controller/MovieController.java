@@ -1,0 +1,84 @@
+package com.cinex.module.movie.controller;
+
+import com.cinex.common.response.ApiResponse;
+import com.cinex.common.response.PageResponse;
+import com.cinex.module.movie.dto.MovieListResponse;
+import com.cinex.module.movie.dto.MovieRequest;
+import com.cinex.module.movie.dto.MovieResponse;
+import com.cinex.module.movie.entity.MovieStatus;
+import com.cinex.module.movie.service.MovieService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/movies")
+@RequiredArgsConstructor
+@Tag(name = "Movie", description = "Movie CRUD, search, filter")
+public class MovieController {
+
+    private final MovieService movieService;
+
+    @GetMapping
+    @Operation(summary = "List movies with search and filter")
+    public ApiResponse<PageResponse<MovieListResponse>> listMovies(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) MovieStatus status,
+            @RequestParam(required = false) Long genreId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.ok(movieService.listMovies(keyword, status, genreId, pageable));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get movie detail")
+    public ApiResponse<MovieResponse> getMovie(@PathVariable Long id) {
+        return ApiResponse.ok(movieService.getMovie(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Create a new movie")
+    public ApiResponse<MovieResponse> createMovie(@Valid @RequestBody MovieRequest request) {
+        return ApiResponse.ok("Movie created", movieService.createMovie(request));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Update a movie")
+    public ApiResponse<MovieResponse> updateMovie(
+            @PathVariable Long id,
+            @Valid @RequestBody MovieRequest request) {
+        return ApiResponse.ok("Movie updated", movieService.updateMovie(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Soft delete a movie")
+    public ApiResponse<Void> deleteMovie(@PathVariable Long id) {
+        movieService.deleteMovie(id);
+        return ApiResponse.ok("Movie deleted", null);
+    }
+
+    @PostMapping("/{id}/poster")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Upload movie poster")
+    public ApiResponse<MovieResponse> uploadPoster(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        return ApiResponse.ok("Poster uploaded", movieService.uploadPoster(id, file));
+    }
+}

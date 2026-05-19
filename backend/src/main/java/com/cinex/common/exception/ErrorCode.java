@@ -18,6 +18,9 @@ public enum ErrorCode {
     INVALID_CREDENTIALS(1006, "Invalid username or password", HttpStatus.UNAUTHORIZED),
     INVALID_PASSWORD(1007, "Invalid password", HttpStatus.BAD_REQUEST),
     INVALID_FILE(1008, "Invalid file", HttpStatus.BAD_REQUEST),
+    GENRE_NOT_FOUND(2001, "Genre not found", HttpStatus.NOT_FOUND),
+    GENRE_EXISTED(2002, "Genre already exists", HttpStatus.CONFLICT),
+    MOVIE_NOT_FOUND(2003, "Movie not found", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;

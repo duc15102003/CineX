@@ -101,6 +101,7 @@ Với MỖI pattern:
 | **Enum** | — | Role, ErrorCode, MovieStatus, ... type-safe | `module/auth/entity/Role.java` |
 | **Mapper (MapStruct)** | Structural | Tự sinh code chuyển User ↔ DTO, compile-time | `module/user/mapper/UserMapper.java` |
 | **Method Security** | Cross-cutting | @PreAuthorize phân quyền ADMIN method-level | `module/user/controller/UserController.java` |
+| **Specification** | Behavioral | Build query WHERE động (search + filter phim) | `module/movie/specification/MovieSpecification.java` |
 
 ### Sẽ áp dụng (theo task)
 
