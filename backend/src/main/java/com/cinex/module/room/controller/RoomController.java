@@ -1,0 +1,66 @@
+package com.cinex.module.room.controller;
+
+import com.cinex.common.response.ApiResponse;
+import com.cinex.module.room.dto.RoomRequest;
+import com.cinex.module.room.dto.RoomResponse;
+import com.cinex.module.room.service.RoomService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/rooms")
+@RequiredArgsConstructor
+@Tag(name = "Room", description = "Cinema room management")
+public class RoomController {
+
+    private final RoomService roomService;
+
+    @GetMapping
+    @Operation(summary = "List all rooms")
+    public ApiResponse<List<RoomResponse>> listRooms() {
+        return ApiResponse.ok(roomService.listRooms());
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get room detail")
+    public ApiResponse<RoomResponse> getRoom(@PathVariable Long id) {
+        return ApiResponse.ok(roomService.getRoom(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Create a new room")
+    public ApiResponse<RoomResponse> createRoom(@Valid @RequestBody RoomRequest request) {
+        return ApiResponse.ok("Room created", roomService.createRoom(request));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Update a room")
+    public ApiResponse<RoomResponse> updateRoom(
+            @PathVariable Long id,
+            @Valid @RequestBody RoomRequest request) {
+        return ApiResponse.ok("Room updated", roomService.updateRoom(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Soft delete a room")
+    public ApiResponse<Void> deleteRoom(@PathVariable Long id) {
+        roomService.deleteRoom(id);
+        return ApiResponse.ok("Room deleted", null);
+    }
+}

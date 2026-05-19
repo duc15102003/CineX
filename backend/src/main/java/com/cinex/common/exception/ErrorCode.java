@@ -21,6 +21,8 @@ public enum ErrorCode {
     GENRE_NOT_FOUND(2001, "Genre not found", HttpStatus.NOT_FOUND),
     GENRE_EXISTED(2002, "Genre already exists", HttpStatus.CONFLICT),
     MOVIE_NOT_FOUND(2003, "Movie not found", HttpStatus.NOT_FOUND),
+    ROOM_NOT_FOUND(3001, "Room not found", HttpStatus.NOT_FOUND),
+    ROOM_EXISTED(3002, "Room already exists", HttpStatus.CONFLICT),
     ;
 
     private final int code;
