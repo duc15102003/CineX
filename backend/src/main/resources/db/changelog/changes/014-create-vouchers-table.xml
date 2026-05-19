@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="015" author="cinex">
+    <changeSet id="014" author="cinex">
         <createTable tableName="vouchers">
             <!-- BaseEntity -->
             <column name="id" type="BIGINT" autoIncrement="true">

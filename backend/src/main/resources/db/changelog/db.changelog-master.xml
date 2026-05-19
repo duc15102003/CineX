@@ -18,8 +18,8 @@
     <include file="db/changelog/changes/011-create-bookings-table.xml"/>
     <include file="db/changelog/changes/012-create-payments-table.xml"/>
     <include file="db/changelog/changes/013-seed-default-data.xml"/>
-    <include file="db/changelog/changes/014-create-reviews-table.xml"/>
-    <include file="db/changelog/changes/015-create-vouchers-table.xml"/>
-    <include file="db/changelog/changes/016-create-password-reset-tokens-table.xml"/>
+    <include file="db/changelog/changes/014-create-vouchers-table.xml"/>
+    <include file="db/changelog/changes/015-create-password-reset-tokens-table.xml"/>
+
 
 </databaseChangeLog>

@@ -352,19 +352,6 @@ Phim "Avengers" (150 phút):
 
 **Quan hệ:** bookings 1 ──── 1 payments (1 đơn đặt = 1 thanh toán)
 
-### `reviews` — Đánh giá phim
-
-| Cột | Kiểu | Ràng buộc | Mô tả |
-|---|---|---|---|
-| id | BIGINT | PK | |
-| userId | BIGINT | FK → users.id | Ai đánh giá |
-| movieId | BIGINT | FK → movies.id | Đánh giá phim nào |
-| rating | INT | NOT NULL | Điểm 1-10 |
-| comment | NTEXT | | Nội dung review |
-| + BaseEntity fields | | | version, storageState, audit |
-
-**Quan hệ:** users 1──N reviews, movies 1──N reviews. UNIQUE(userId, movieId) — 1 user review 1 phim 1 lần.
-
 ### `vouchers` — Mã giảm giá
 
 | Cột | Kiểu | Ràng buộc | Mô tả |
@@ -421,8 +408,6 @@ users ─────1:N──── refresh_tokens
   │                    │
   │                    └──N:1──── voucher_usages ────N:1──── vouchers
   │
-  ├────────1:N──── reviews ────N:1──── movies
-  │
   └────────1:N──── password_reset_tokens
 ```
 
@@ -430,11 +415,9 @@ users ─────1:N──── refresh_tokens
 |---|---|---|
 | users → refresh_tokens | 1:N | 1 user có nhiều refresh token (nhiều thiết bị) |
 | users → bookings | 1:N | 1 user đặt nhiều vé |
-| users → reviews | 1:N | 1 user đánh giá nhiều phim |
 | users → password_reset_tokens | 1:N | 1 user có thể request reset nhiều lần |
 | movies → genres | N:N | 1 phim nhiều thể loại, 1 thể loại nhiều phim |
 | movies → showtimes | 1:N | 1 phim có nhiều suất chiếu |
-| movies → reviews | 1:N | 1 phim có nhiều đánh giá |
 | rooms → showtimes | 1:N | 1 phòng có nhiều suất chiếu (khác giờ) |
 | rooms → seats | 1:N | 1 phòng có nhiều ghế |
 | showtimes → bookings | 1:N | 1 suất chiếu có nhiều đơn đặt |
