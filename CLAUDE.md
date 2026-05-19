@@ -99,6 +99,8 @@ Với MỖI pattern:
 | **Filter (Chain of Resp.)** | Behavioral | JwtAuthFilter xác thực trước Controller | `security/JwtAuthFilter.java` |
 | **Wrapper/Facade** | Structural | ApiResponse<T> bọc mọi response cùng format | `common/response/ApiResponse.java` |
 | **Enum** | — | Role, ErrorCode, MovieStatus, ... type-safe | `module/auth/entity/Role.java` |
+| **Mapper (MapStruct)** | Structural | Tự sinh code chuyển User ↔ DTO, compile-time | `module/user/mapper/UserMapper.java` |
+| **Method Security** | Cross-cutting | @PreAuthorize phân quyền ADMIN method-level | `module/user/controller/UserController.java` |
 
 ### Sẽ áp dụng (theo task)
 
