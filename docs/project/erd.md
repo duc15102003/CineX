@@ -352,30 +352,96 @@ Phim "Avengers" (150 phút):
 
 **Quan hệ:** bookings 1 ──── 1 payments (1 đơn đặt = 1 thanh toán)
 
+### `reviews` — Đánh giá phim
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| id | BIGINT | PK | |
+| userId | BIGINT | FK → users.id | Ai đánh giá |
+| movieId | BIGINT | FK → movies.id | Đánh giá phim nào |
+| rating | INT | NOT NULL | Điểm 1-10 |
+| comment | NTEXT | | Nội dung review |
+| + BaseEntity fields | | | version, storageState, audit |
+
+**Quan hệ:** users 1──N reviews, movies 1──N reviews. UNIQUE(userId, movieId) — 1 user review 1 phim 1 lần.
+
+### `vouchers` — Mã giảm giá
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| id | BIGINT | PK | |
+| code | NVARCHAR(30) | NOT NULL, UNIQUE | Mã voucher (VD: "KHAI_TRUONG_50") |
+| description | NVARCHAR(255) | | Mô tả |
+| discountType | NVARCHAR(20) | NOT NULL | PERCENTAGE / FIXED_AMOUNT |
+| discountValue | DECIMAL(12,0) | NOT NULL | Giá trị giảm (20 = 20% hoặc 20.000đ) |
+| minOrderAmount | DECIMAL(12,0) | default 0 | Đơn tối thiểu |
+| maxDiscount | DECIMAL(12,0) | | Giảm tối đa (cho PERCENTAGE) |
+| usageLimit | INT | | Tổng lượt dùng (null = không giới hạn) |
+| usedCount | INT | default 0 | Đã dùng bao nhiêu lần |
+| startDate | DATETIME2 | NOT NULL | Bắt đầu hiệu lực |
+| endDate | DATETIME2 | NOT NULL | Hết hạn |
+| active | BIT | default true | Admin bật/tắt |
+| + BaseEntity fields | | | |
+
+### `voucher_usages` — Lịch sử dùng voucher
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| id | BIGINT | PK | |
+| voucherId | BIGINT | FK → vouchers.id | Voucher nào |
+| userId | BIGINT | FK → users.id | User nào dùng |
+| bookingId | BIGINT | FK → bookings.id | Dùng cho đơn nào |
+| usedAt | DATETIME2 | NOT NULL | Dùng lúc nào |
+
+**Ràng buộc:** UNIQUE(voucherId, userId) — 1 user chỉ dùng 1 voucher 1 lần.
+
+### `password_reset_tokens` — Token reset mật khẩu
+
+| Cột | Kiểu | Ràng buộc | Mô tả |
+|---|---|---|---|
+| id | BIGINT | PK | |
+| userId | BIGINT | FK → users.id | Token của user nào |
+| token | NVARCHAR(255) | NOT NULL, UNIQUE | UUID token |
+| expiryDate | DATETIME2 | NOT NULL | Hết hạn (15 phút) |
+| used | BIT | default false | Đã dùng chưa (1 lần) |
+| createdAt | DATETIME2 | | |
+
 ## 3. Tổng kết quan hệ
 
 ```
 users ─────1:N──── refresh_tokens
   │
-  └────────1:N──── bookings ────1:1──── payments
-                      │
-                      └──1:N──── booking_seats ────N:1──── seats ────N:1──── rooms
-                      │
-                      └──N:1──── showtimes ────N:1──── movies ────N:N──── genres
-                                    │                               (qua movie_genres)
-                                    └──N:1──── rooms
+  ├────────1:N──── bookings ────1:1──── payments
+  │                    │
+  │                    ├──1:N──── booking_seats ────N:1──── seats ────N:1──── rooms
+  │                    │
+  │                    ├──N:1──── showtimes ────N:1──── movies ────N:N──── genres
+  │                    │                          │                  (qua movie_genres)
+  │                    │                          └──N:1──── rooms
+  │                    │
+  │                    └──N:1──── voucher_usages ────N:1──── vouchers
+  │
+  ├────────1:N──── reviews ────N:1──── movies
+  │
+  └────────1:N──── password_reset_tokens
 ```
 
 | Quan hệ | Kiểu | Giải thích |
 |---|---|---|
 | users → refresh_tokens | 1:N | 1 user có nhiều refresh token (nhiều thiết bị) |
 | users → bookings | 1:N | 1 user đặt nhiều vé |
+| users → reviews | 1:N | 1 user đánh giá nhiều phim |
+| users → password_reset_tokens | 1:N | 1 user có thể request reset nhiều lần |
 | movies → genres | N:N | 1 phim nhiều thể loại, 1 thể loại nhiều phim |
 | movies → showtimes | 1:N | 1 phim có nhiều suất chiếu |
+| movies → reviews | 1:N | 1 phim có nhiều đánh giá |
 | rooms → showtimes | 1:N | 1 phòng có nhiều suất chiếu (khác giờ) |
 | rooms → seats | 1:N | 1 phòng có nhiều ghế |
 | showtimes → bookings | 1:N | 1 suất chiếu có nhiều đơn đặt |
 | bookings → booking_seats | 1:N | 1 đơn đặt có nhiều ghế |
+| bookings → payments | 1:1 | 1 đơn đặt = 1 thanh toán |
+| bookings → voucher_usages | 1:N | 1 đơn có thể dùng voucher |
+| vouchers → voucher_usages | 1:N | 1 voucher dùng bởi nhiều user |
 | seats → booking_seats | 1:N | 1 ghế xuất hiện nhiều đơn (khác suất chiếu) |
 | bookings → payments | 1:1 | 1 đơn đặt = 1 thanh toán |
 
