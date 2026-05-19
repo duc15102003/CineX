@@ -177,8 +177,7 @@ public class MovieService {
     }
 
     private Movie findMovieById(Long id) {
-        return movieRepository.findById(id)
-                .filter(m -> !"DELETED".equals(m.getStorageState()))
+        return movieRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
     }
 }

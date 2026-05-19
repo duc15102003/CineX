@@ -25,8 +25,7 @@ public class RoomService {
 
     @Transactional(readOnly = true)
     public List<RoomResponse> listRooms() {
-        return roomRepository.findAll().stream()
-                .filter(r -> !"DELETED".equals(r.getStorageState()))
+        return roomRepository.findAllActive().stream()
                 .map(roomMapper::toResponse)
                 .toList();
     }
@@ -86,8 +85,7 @@ public class RoomService {
     }
 
     private Room findRoomById(Long id) {
-        return roomRepository.findById(id)
-                .filter(r -> !"DELETED".equals(r.getStorageState()))
+        return roomRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
     }
 }

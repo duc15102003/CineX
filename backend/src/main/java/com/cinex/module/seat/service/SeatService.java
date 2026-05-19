@@ -141,8 +141,7 @@ public class SeatService {
     }
 
     private Room findRoomById(Long roomId) {
-        return roomRepository.findById(roomId)
-                .filter(r -> !"DELETED".equals(r.getStorageState()))
+        return roomRepository.findActiveById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
     }
 }

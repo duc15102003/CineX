@@ -22,8 +22,7 @@ public class GenreService {
 
     @Transactional(readOnly = true)
     public List<GenreResponse> listGenres() {
-        return genreRepository.findAll().stream()
-                .filter(g -> !"DELETED".equals(g.getStorageState()))
+        return genreRepository.findAllActive().stream()
                 .map(genreMapper::toResponse)
                 .toList();
     }
