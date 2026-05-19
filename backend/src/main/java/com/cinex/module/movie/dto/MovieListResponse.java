@@ -21,6 +21,7 @@ import java.util.Set;
 public class MovieListResponse {
 
     private Long id;
+    private String storageState;
     private String title;
     private String posterUrl;
     private Integer duration;

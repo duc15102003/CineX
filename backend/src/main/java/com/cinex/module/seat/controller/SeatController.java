@@ -19,21 +19,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * URL nhất quán: tất cả nằm dưới /api/rooms/{roomId}/seats
+ * Ghế luôn thuộc 1 phòng → URL phản ánh quan hệ này.
+ */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/rooms/{roomId}/seats")
 @RequiredArgsConstructor
 @Tag(name = "Seat", description = "Seat map management")
 public class SeatController {
 
     private final SeatService seatService;
 
-    @GetMapping("/rooms/{roomId}/seats")
+    @GetMapping
     @Operation(summary = "Get seat map of a room")
     public ApiResponse<SeatMapResponse> getSeatMap(@PathVariable Long roomId) {
         return ApiResponse.ok(seatService.getSeatMap(roomId));
     }
 
-    @PostMapping("/rooms/{roomId}/seats/generate")
+    @PostMapping("/generate")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "(Admin) Generate seats for a room")
     public ApiResponse<SeatMapResponse> generateSeats(
@@ -42,12 +46,13 @@ public class SeatController {
         return ApiResponse.ok("Seats generated", seatService.generateSeats(roomId, request));
     }
 
-    @PutMapping("/seats/{id}")
+    @PutMapping("/{seatId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "(Admin) Update seat type or status")
     public ApiResponse<SeatResponse> updateSeat(
-            @PathVariable Long id,
+            @PathVariable Long roomId,
+            @PathVariable Long seatId,
             @RequestBody UpdateSeatRequest request) {
-        return ApiResponse.ok("Seat updated", seatService.updateSeat(id, request));
+        return ApiResponse.ok("Seat updated", seatService.updateSeat(seatId, request));
     }
 }

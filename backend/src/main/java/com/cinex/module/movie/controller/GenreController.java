@@ -9,10 +9,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,8 +31,9 @@ public class GenreController {
 
     @GetMapping
     @Operation(summary = "List all genres")
-    public ApiResponse<List<GenreResponse>> listGenres() {
-        return ApiResponse.ok(genreService.listGenres());
+    public ApiResponse<List<GenreResponse>> listGenres(
+            @RequestParam(defaultValue = "false") boolean includeDeleted) {
+        return ApiResponse.ok(genreService.listGenres(includeDeleted));
     }
 
     @PostMapping
@@ -36,5 +41,29 @@ public class GenreController {
     @Operation(summary = "(Admin) Create a new genre")
     public ApiResponse<GenreResponse> createGenre(@Valid @RequestBody GenreRequest request) {
         return ApiResponse.ok("Genre created", genreService.createGenre(request));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Update a genre")
+    public ApiResponse<GenreResponse> updateGenre(
+            @PathVariable Long id,
+            @Valid @RequestBody GenreRequest request) {
+        return ApiResponse.ok("Genre updated", genreService.updateGenre(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Soft delete a genre")
+    public ApiResponse<Void> deleteGenre(@PathVariable Long id) {
+        genreService.deleteGenre(id);
+        return ApiResponse.ok("Genre deleted", null);
+    }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Restore a soft-deleted genre")
+    public ApiResponse<GenreResponse> restoreGenre(@PathVariable Long id) {
+        return ApiResponse.ok("Genre restored", genreService.restoreGenre(id));
     }
 }

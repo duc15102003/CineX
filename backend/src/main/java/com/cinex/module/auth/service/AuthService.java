@@ -49,7 +49,8 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
+        // Dùng findActiveByUsername → user đã soft delete không login được
+        User user = userRepository.findActiveByUsername(request.getUsername())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -63,16 +64,24 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
+    /**
+     * Refresh token rotation: tạo access token MỚI + refresh token MỚI.
+     * Token cũ bị revoke ngay → nếu bị lộ, attacker không dùng lại được.
+     */
     @Transactional
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request.getRefreshToken());
-        User user = refreshToken.getUser();
+        RefreshToken oldToken = refreshTokenService.validateRefreshToken(request.getRefreshToken());
+        User user = oldToken.getUser();
+
+        // Revoke token cũ + tạo token mới (rotation)
+        refreshTokenService.revokeAllUserTokens(user.getId());
+        RefreshToken newToken = refreshTokenService.createRefreshToken(user);
 
         String accessToken = jwtUtil.generateToken(user.getUsername(), Map.of("role", user.getRole().name()));
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken.getToken())
+                .refreshToken(newToken.getToken())
                 .expiresIn(jwtUtil.getExpirationMs() / 1000)
                 .build();
     }

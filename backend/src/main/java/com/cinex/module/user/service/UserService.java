@@ -143,7 +143,7 @@ public class UserService {
 
     private User getCurrentUser() {
         String username = SecurityUtil.getCurrentUsername();
-        return userRepository.findByUsername(username)
+        return userRepository.findActiveByUsername(username)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }

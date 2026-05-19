@@ -18,6 +18,7 @@ import java.util.Set;
 public class MovieResponse {
 
     private Long id;
+    private String storageState;
     private String title;
     private String description;
     private Integer duration;

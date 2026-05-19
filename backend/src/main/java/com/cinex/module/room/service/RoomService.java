@@ -23,16 +23,29 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final RoomMapper roomMapper;
 
+    /**
+     * Danh sách phòng.
+     * includeDeleted = false (mặc định): chỉ trả phòng chưa xóa (filter SQL)
+     * includeDeleted = true: trả tất cả kể cả đã xóa (admin xem lại + khôi phục)
+     */
     @Transactional(readOnly = true)
-    public List<RoomResponse> listRooms() {
-        return roomRepository.findAllActive().stream()
-                .map(roomMapper::toResponse)
-                .toList();
+    public List<RoomResponse> listRooms(boolean includeDeleted) {
+        List<Room> rooms = includeDeleted
+                ? roomRepository.findAll()
+                : roomRepository.findAllActive();
+        return rooms.stream().map(roomMapper::toResponse).toList();
     }
 
+    /**
+     * Chi tiết phòng — trả về bình thường, KHÔNG filter DELETED.
+     * Lý do: list đã control hiển thị, user click từ list → phải thấy chi tiết.
+     * FE tự xử lý hiển thị dựa vào storageState trong response.
+     */
     @Transactional(readOnly = true)
     public RoomResponse getRoom(Long id) {
-        return roomMapper.toResponse(findRoomById(id));
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        return roomMapper.toResponse(room);
     }
 
     @Transactional
@@ -56,9 +69,9 @@ public class RoomService {
 
     @Transactional
     public RoomResponse updateRoom(Long id, RoomRequest request) {
-        Room room = findRoomById(id);
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // Kiểm tra trùng tên với phòng khác
         if (!room.getName().equals(request.getName()) && roomRepository.existsByName(request.getName())) {
             throw new BusinessException(ErrorCode.ROOM_EXISTED,
                     "Room '" + request.getName() + "' already exists");
@@ -78,14 +91,23 @@ public class RoomService {
 
     @Transactional
     public void deleteRoom(Long id) {
-        Room room = findRoomById(id);
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
         room.setStorageState("DELETED");
         roomRepository.save(room);
         log.info("Soft deleted room: {}", room.getName());
     }
 
-    private Room findRoomById(Long id) {
-        return roomRepository.findActiveById(id)
+    /**
+     * (ADMIN) Khôi phục phòng đã xóa mềm.
+     */
+    @Transactional
+    public RoomResponse restoreRoom(Long id) {
+        Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        room.setStorageState(null);
+        roomRepository.save(room);
+        log.info("Restored room: {}", room.getName());
+        return roomMapper.toResponse(room);
     }
 }

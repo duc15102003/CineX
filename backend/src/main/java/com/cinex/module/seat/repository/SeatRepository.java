@@ -9,18 +9,11 @@ import java.util.List;
 
 public interface SeatRepository extends JpaRepository<Seat, Long> {
 
-    List<Seat> findByRoomIdOrderByRowLabelAscColNumberAsc(Long roomId);
+    // Chỉ lấy ghế chưa xóa, sắp xếp theo hàng + cột
+    List<Seat> findByRoomIdAndStorageStateIsNullOrderByRowLabelAscColNumberAsc(Long roomId);
 
-    int countByRoomId(Long roomId);
-
-    /**
-     * Xóa THẬT tất cả ghế của phòng (không soft delete).
-     * Dùng khi admin generate lại sơ đồ ghế — xóa hết rồi tạo mới.
-     *
-     * @Modifying: đánh dấu đây là query UPDATE/DELETE (không phải SELECT)
-     * Nếu thiếu @Modifying → Spring nghĩ là SELECT → lỗi runtime
-     */
+    // Soft delete tất cả ghế của phòng (thay vì hard delete)
     @Modifying
-    @Query("DELETE FROM Seat s WHERE s.room.id = :roomId")
-    void deleteAllByRoomId(Long roomId);
+    @Query("UPDATE Seat s SET s.storageState = 'DELETED' WHERE s.room.id = :roomId AND (s.storageState IS NULL OR s.storageState <> 'DELETED')")
+    void softDeleteByRoomId(Long roomId);
 }

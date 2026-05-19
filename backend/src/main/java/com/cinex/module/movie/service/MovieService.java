@@ -37,23 +37,19 @@ public class MovieService {
     private final FileUploadService fileUploadService;
 
     /**
-     * Danh sách phim có phân trang + tìm kiếm + lọc.
-     *
-     * [Specification Pattern] Ghép điều kiện WHERE động:
-     * - keyword → LIKE %keyword% trên title
-     * - status → WHERE status = ?
-     * - genreId → JOIN movie_genres WHERE genre_id = ?
-     * - Luôn filter soft delete
-     *
-     * Client gọi: GET /api/movies?keyword=Avengers&status=NOW_SHOWING&genreId=1&page=0&size=10
+     * Danh sách phim — Specification Pattern ghép filter động.
+     * includeDeleted = false (mặc định): filter DELETED ở SQL
+     * includeDeleted = true: trả hết (admin xem phim đã xóa)
      */
     @Transactional(readOnly = true)
     public PageResponse<MovieListResponse> listMovies(String keyword, MovieStatus status,
-                                                       Long genreId, Pageable pageable) {
-        // Bắt đầu với filter soft delete (luôn có)
-        Specification<Movie> spec = MovieSpecification.notDeleted();
+                                                       Long genreId, boolean includeDeleted,
+                                                       Pageable pageable) {
+        Specification<Movie> spec = Specification.where(null);
 
-        // Ghép thêm điều kiện nếu client truyền
+        if (!includeDeleted) {
+            spec = spec.and(MovieSpecification.notDeleted());
+        }
         if (keyword != null && !keyword.isBlank()) {
             spec = spec.and(MovieSpecification.hasTitle(keyword));
         }
@@ -70,18 +66,16 @@ public class MovieService {
     }
 
     /**
-     * Chi tiết phim — trả đầy đủ tất cả field + genres.
+     * Chi tiết phim — trả về bình thường, KHÔNG filter DELETED.
+     * FE tự xử lý hiển thị dựa vào storageState trong response.
      */
     @Transactional(readOnly = true)
     public MovieResponse getMovie(Long id) {
-        Movie movie = findMovieById(id);
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
         return movieMapper.toResponse(movie);
     }
 
-    /**
-     * (ADMIN) Tạo phim mới.
-     * Client gửi genreIds = [1, 3, 5] → Service query Genre entities → set vào Movie.genres
-     */
     @Transactional
     public MovieResponse createMovie(MovieRequest request) {
         Movie movie = Movie.builder()
@@ -104,12 +98,10 @@ public class MovieService {
         return movieMapper.toResponse(movie);
     }
 
-    /**
-     * (ADMIN) Sửa phim.
-     */
     @Transactional
     public MovieResponse updateMovie(Long id, MovieRequest request) {
-        Movie movie = findMovieById(id);
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
 
         movie.setTitle(request.getTitle());
         movie.setDescription(request.getDescription());
@@ -129,26 +121,30 @@ public class MovieService {
         return movieMapper.toResponse(movie);
     }
 
-    /**
-     * (ADMIN) Xóa mềm phim — set storageState = "DELETED".
-     */
     @Transactional
     public void deleteMovie(Long id) {
-        Movie movie = findMovieById(id);
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
         movie.setStorageState("DELETED");
         movieRepository.save(movie);
         log.info("Soft deleted movie: {}", movie.getTitle());
     }
 
-    /**
-     * (ADMIN) Upload poster phim lên Cloudinary.
-     * Nếu phim đã có poster cũ → xóa ảnh cũ trên Cloudinary trước khi upload mới.
-     */
+    @Transactional
+    public MovieResponse restoreMovie(Long id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
+        movie.setStorageState(null);
+        movieRepository.save(movie);
+        log.info("Restored movie: {}", movie.getTitle());
+        return movieMapper.toResponse(movie);
+    }
+
     @Transactional
     public MovieResponse uploadPoster(Long id, MultipartFile file) {
-        Movie movie = findMovieById(id);
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
 
-        // Xóa poster cũ nếu có
         if (movie.getPosterUrl() != null) {
             fileUploadService.deleteImage(movie.getPosterUrl());
         }
@@ -160,10 +156,6 @@ public class MovieService {
         return movieMapper.toResponse(movie);
     }
 
-    /**
-     * Chuyển Set<Long> genreIds → Set<Genre> entities.
-     * Nếu genreId không tồn tại → throw GENRE_NOT_FOUND.
-     */
     private Set<Genre> resolveGenres(Set<Long> genreIds) {
         if (genreIds == null || genreIds.isEmpty()) {
             return new HashSet<>();
@@ -174,10 +166,5 @@ public class MovieService {
                     "One or more genres not found");
         }
         return genres;
-    }
-
-    private Movie findMovieById(Long id) {
-        return movieRepository.findActiveById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
     }
 }

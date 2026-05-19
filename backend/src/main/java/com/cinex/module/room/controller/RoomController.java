@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,9 +30,10 @@ public class RoomController {
     private final RoomService roomService;
 
     @GetMapping
-    @Operation(summary = "List all rooms")
-    public ApiResponse<List<RoomResponse>> listRooms() {
-        return ApiResponse.ok(roomService.listRooms());
+    @Operation(summary = "List all rooms (includeDeleted=true to show deleted)")
+    public ApiResponse<List<RoomResponse>> listRooms(
+            @RequestParam(defaultValue = "false") boolean includeDeleted) {
+        return ApiResponse.ok(roomService.listRooms(includeDeleted));
     }
 
     @GetMapping("/{id}")
@@ -62,5 +64,12 @@ public class RoomController {
     public ApiResponse<Void> deleteRoom(@PathVariable Long id) {
         roomService.deleteRoom(id);
         return ApiResponse.ok("Room deleted", null);
+    }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Restore a soft-deleted room")
+    public ApiResponse<RoomResponse> restoreRoom(@PathVariable Long id) {
+        return ApiResponse.ok("Room restored", roomService.restoreRoom(id));
     }
 }

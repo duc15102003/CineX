@@ -33,18 +33,13 @@ public class SeatService {
     private final RoomRepository roomRepository;
     private final SeatMapper seatMapper;
 
-    /**
-     * Trả sơ đồ ghế nhóm theo hàng — FE dùng render grid.
-     *
-     * Kết quả: { "A": [ghế A1, A2, ...], "B": [ghế B1, B2, ...], ... }
-     * LinkedHashMap giữ thứ tự insert → hàng A trước B trước C.
-     */
     @Transactional(readOnly = true)
     public SeatMapResponse getSeatMap(Long roomId) {
-        Room room = findRoomById(roomId);
-        List<Seat> seats = seatRepository.findByRoomIdOrderByRowLabelAscColNumberAsc(roomId);
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // Nhóm ghế theo hàng, giữ thứ tự
+        List<Seat> seats = seatRepository.findByRoomIdAndStorageStateIsNullOrderByRowLabelAscColNumberAsc(roomId);
+
         Map<String, List<SeatResponse>> seatMap = new LinkedHashMap<>();
         for (Seat seat : seats) {
             seatMap.computeIfAbsent(seat.getRowLabel(), k -> new ArrayList<>())
@@ -61,32 +56,41 @@ public class SeatService {
 
     /**
      * (ADMIN) Tự động sinh ghế cho phòng theo cấu hình.
-     *
-     * Luồng:
-     * 1. Xóa hết ghế cũ (nếu có)
-     * 2. Sinh ghế mới: hàng A→J, cột 1→12
-     * 3. Gán loại: vipRows = VIP, coupleRow = COUPLE, còn lại = STANDARD
-     * 4. Cập nhật Room.totalSeats
-     *
-     * VD: totalRows=10, totalCols=12, vipRows=["E","F"], coupleRow="J"
-     * → A1-A12 (STANDARD), ..., E1-E12 (VIP), F1-F12 (VIP), ..., J1-J12 (COUPLE)
+     * Soft delete ghế cũ (thay vì hard delete) → giữ audit trail.
+     * Validate: vipRows và coupleRow phải nằm trong range A→(A+totalRows-1).
      */
     @Transactional
     public SeatMapResponse generateSeats(Long roomId, SeatGenerateRequest request) {
-        Room room = findRoomById(roomId);
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // Xóa ghế cũ
-        seatRepository.deleteAllByRoomId(roomId);
+        // Validate vipRows và coupleRow nằm trong range hợp lệ
+        char maxRowChar = (char) ('A' + request.getTotalRows() - 1);
+        String maxRow = String.valueOf(maxRowChar);
 
         Set<String> vipRows = request.getVipRows() != null ? request.getVipRows() : Set.of();
         String coupleRow = request.getCoupleRow();
 
+        for (String vr : vipRows) {
+            if (vr.length() != 1 || vr.charAt(0) < 'A' || vr.charAt(0) > maxRowChar) {
+                throw new BusinessException(ErrorCode.INVALID_REQUEST,
+                        "VIP row '" + vr + "' is out of range A-" + maxRow);
+            }
+        }
+        if (coupleRow != null && !coupleRow.isBlank()) {
+            if (coupleRow.length() != 1 || coupleRow.charAt(0) < 'A' || coupleRow.charAt(0) > maxRowChar) {
+                throw new BusinessException(ErrorCode.INVALID_REQUEST,
+                        "Couple row '" + coupleRow + "' is out of range A-" + maxRow);
+            }
+        }
+
+        // Soft delete ghế cũ thay vì hard delete
+        seatRepository.softDeleteByRoomId(roomId);
+
         List<Seat> seats = new ArrayList<>();
         for (int row = 0; row < request.getTotalRows(); row++) {
-            // row 0 → "A", row 1 → "B", ..., row 25 → "Z"
             String rowLabel = String.valueOf((char) ('A' + row));
 
-            // Xác định loại ghế cho hàng này
             SeatType seatType;
             if (rowLabel.equalsIgnoreCase(coupleRow)) {
                 seatType = SeatType.COUPLE;
@@ -97,21 +101,19 @@ public class SeatService {
             }
 
             for (int col = 1; col <= request.getTotalCols(); col++) {
-                Seat seat = Seat.builder()
+                seats.add(Seat.builder()
                         .room(room)
                         .rowLabel(rowLabel)
                         .colNumber(col)
-                        .seatNumber(rowLabel + col)  // "A1", "B5", "J12"
+                        .seatNumber(rowLabel + col)
                         .seatType(seatType)
                         .status(SeatStatus.AVAILABLE)
-                        .build();
-                seats.add(seat);
+                        .build());
             }
         }
 
         seatRepository.saveAll(seats);
 
-        // Cập nhật totalSeats trong Room
         room.setTotalSeats(seats.size());
         roomRepository.save(room);
 
@@ -119,10 +121,6 @@ public class SeatService {
         return getSeatMap(roomId);
     }
 
-    /**
-     * (ADMIN) Sửa loại/trạng thái ghế.
-     * VD: đổi ghế A1 từ STANDARD → VIP, hoặc đánh dấu ghế hỏng BROKEN.
-     */
     @Transactional
     public SeatResponse updateSeat(Long seatId, UpdateSeatRequest request) {
         Seat seat = seatRepository.findById(seatId)
@@ -138,10 +136,5 @@ public class SeatService {
         seatRepository.save(seat);
         log.info("Updated seat {}: type={}, status={}", seat.getSeatNumber(), seat.getSeatType(), seat.getStatus());
         return seatMapper.toResponse(seat);
-    }
-
-    private Room findRoomById(Long roomId) {
-        return roomRepository.findActiveById(roomId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
     }
 }

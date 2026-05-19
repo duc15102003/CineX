@@ -39,8 +39,9 @@ public class MovieController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) MovieStatus status,
             @RequestParam(required = false) Long genreId,
+            @RequestParam(defaultValue = "false") boolean includeDeleted,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.ok(movieService.listMovies(keyword, status, genreId, pageable));
+        return ApiResponse.ok(movieService.listMovies(keyword, status, genreId, includeDeleted, pageable));
     }
 
     @GetMapping("/{id}")
@@ -71,6 +72,13 @@ public class MovieController {
     public ApiResponse<Void> deleteMovie(@PathVariable Long id) {
         movieService.deleteMovie(id);
         return ApiResponse.ok("Movie deleted", null);
+    }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "(Admin) Restore a soft-deleted movie")
+    public ApiResponse<MovieResponse> restoreMovie(@PathVariable Long id) {
+        return ApiResponse.ok("Movie restored", movieService.restoreMovie(id));
     }
 
     @PostMapping("/{id}/poster")

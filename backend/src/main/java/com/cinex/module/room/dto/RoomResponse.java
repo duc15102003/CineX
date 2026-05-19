@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class RoomResponse {
 
     private Long id;
+    private String storageState;
     private String name;
     private RoomType type;
     private Integer totalSeats;

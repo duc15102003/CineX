@@ -8,6 +8,7 @@ import lombok.Getter;
 public class GenreResponse {
 
     private Long id;
+    private String storageState;
     private String name;
     private String description;
 }
