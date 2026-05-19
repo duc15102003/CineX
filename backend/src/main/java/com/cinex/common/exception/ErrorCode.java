@@ -23,6 +23,7 @@ public enum ErrorCode {
     MOVIE_NOT_FOUND(2003, "Movie not found", HttpStatus.NOT_FOUND),
     ROOM_NOT_FOUND(3001, "Room not found", HttpStatus.NOT_FOUND),
     ROOM_EXISTED(3002, "Room already exists", HttpStatus.CONFLICT),
+    SEAT_NOT_FOUND(3003, "Seat not found", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;
