@@ -71,15 +71,24 @@ public static Specification<Movie> hasGenre(Long genreId) {
 ```
 
 ```java
-// MovieService.java — ghép điều kiện tùy ý
-Specification<Movie> spec = MovieSpecification.notDeleted();
+// MovieService.java — nhận Filter DTO, build Specification tự động
+public PageResponse<MovieListResponse> listMovies(MovieFilter filter, Pageable pageable) {
+    var spec = MovieSpecification.fromFilter(filter);
+    // fromFilter() bên trong tự ghép: notDeleted + hasTitle + hasStatus + hasGenre
+    Page<MovieListResponse> page = movieRepository.findAll(spec, pageable)
+            .map(movieMapper::toListResponse);
+    return PageResponse.from(page);
+}
 
-if (keyword != null)  spec = spec.and(MovieSpecification.hasTitle(keyword));
-if (status != null)   spec = spec.and(MovieSpecification.hasStatus(status));
-if (genreId != null)  spec = spec.and(MovieSpecification.hasGenre(genreId));
-
-Page<MovieListResponse> page = movieRepository.findAll(spec, pageable)
-    .map(movieMapper::toListResponse);
+// MovieSpecification.fromFilter() — entry point thống nhất
+public static Specification<Movie> fromFilter(MovieFilter filter) {
+    Specification<Movie> spec = Specification.where(null);
+    if (!Boolean.TRUE.equals(filter.getIncludeDeleted())) spec = spec.and(notDeleted());
+    if (StringUtils.hasText(filter.getKeyword()))          spec = spec.and(hasTitle(filter.getKeyword()));
+    if (filter.getStatus() != null)                        spec = spec.and(hasStatus(filter.getStatus()));
+    if (filter.getGenreId() != null)                       spec = spec.and(hasGenre(filter.getGenreId()));
+    return spec;
+}
 ```
 
 #### Giải thích Criteria API (root, query, cb)
@@ -293,17 +302,23 @@ movie.setStatus(MovieStatus.COMING_SOON);   // ✅ Đúng
 
 ## 4. Sơ đồ luồng xử lý
 
-### Tìm kiếm phim (Specification)
+### Tìm kiếm phim (Filter DTO + Specification)
 ```
 GET /api/movies?keyword=Avengers&status=NOW_SHOWING&genreId=1&page=0&size=10
 │
 ▼
-MovieController.listMovies(keyword, status, genreId, pageable)
+Spring tự bind query params vào MovieFilter DTO
 │
 ▼
-MovieService.listMovies(...)
+MovieController.listMovies(MovieFilter filter, Pageable pageable)
 │
-├── Spec = notDeleted()
+▼
+MovieService.listMovies(filter, pageable)
+│
+▼
+MovieSpecification.fromFilter(filter)
+│
+├── includeDeleted = null → spec.and(notDeleted())
 │     → WHERE (storage_state IS NULL OR storage_state <> 'DELETED')
 │
 ├── keyword = "Avengers" → spec.and(hasTitle("Avengers"))

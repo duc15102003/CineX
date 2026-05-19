@@ -6,7 +6,6 @@
 
 | Thành phần | Mục đích | File chính |
 |---|---|---|
-| **BaseService** | CRUD dùng chung, module chỉ cần extends | `common/service/BaseService.java` |
 | **AuditLog** | Ghi lại ai sửa gì, lúc nào | `module/audit/service/AuditLogService.java` |
 | **SystemConfig** | Cấu hình động đọc từ DB + cache | `module/config/service/SystemConfigService.java` |
 | **FileUploadService** | Upload ảnh lên Cloudinary | `common/service/FileUploadService.java` |
@@ -17,7 +16,6 @@
 
 | File | Tác dụng | Design Pattern |
 |---|---|---|
-| `common/service/BaseService.java` | Abstract class CRUD chung | Template Method |
 | `common/service/FileUploadService.java` | Upload ảnh lên Cloudinary | Single Responsibility |
 | `common/config/CloudinaryConfig.java` | Tạo Cloudinary Bean từ config | Configuration |
 | `module/audit/entity/AuditLog.java` | Entity map bảng `audit_log` | — |
@@ -32,100 +30,7 @@
 
 ## 3. Design Patterns
 
-### 3.1 Template Method Pattern (Behavioral)
-
-#### Pattern là gì?
-Định nghĩa "khung sườn" của 1 thuật toán trong class cha, nhưng cho class con override 1 số bước cụ thể.
-
-#### Ví dụ đời thường
-Nghĩ như **quy trình làm bánh**:
-- Bước chung (class cha đã viết): nhào bột → nướng → đóng gói
-- Bước riêng (class con override): **loại nhân** (bánh mì thì nhân thịt, bánh ngọt thì nhân kem)
-
-Người ta không cần viết lại bước "nhào bột" cho mỗi loại bánh — chỉ thay đổi phần nhân.
-
-#### Áp dụng ở đâu trong code
-
-```java
-// BaseService.java — class cha
-public abstract class BaseService<E extends BaseEntity, ID> {
-
-    // "Lỗ hổng" mà class con PHẢI điền vào
-    protected abstract JpaRepository<E, ID> getRepository();
-
-    // Các method chung — ĐÃ VIẾT SẴN, class con KHÔNG cần viết lại
-    public E findById(ID id) {
-        return getRepository().findById(id)
-            .filter(entity -> !"DELETED".equals(entity.getStorageState()))
-            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-    }
-
-    public PageResponse<E> findAll(Pageable pageable) { ... }
-    public E save(E entity) { ... }
-    public void softDelete(ID id) { ... }
-}
-
-// MovieService — class con (sẽ tạo ở task 005)
-public class MovieService extends BaseService<Movie, Long> {
-    private final MovieRepository movieRepository;
-
-    @Override
-    protected JpaRepository<Movie, Long> getRepository() {
-        return movieRepository;  // Chỉ cần trả repository, CRUD có sẵn
-    }
-
-    // Chỉ viết thêm logic RIÊNG của Movie
-    public List<Movie> searchByTitle(String keyword) { ... }
-}
-```
-
-#### So sánh before/after
-
-```java
-// ❌ KHÔNG dùng pattern — lặp lại 8 lần cho 8 module
-// MovieService.java
-public Movie findById(Long id) {
-    return movieRepository.findById(id).orElseThrow(...);
-}
-public void softDelete(Long id) {
-    Movie movie = findById(id);
-    movie.setStorageState("DELETED");
-    movieRepository.save(movie);
-}
-
-// RoomService.java — LẶP LẠI Y CHANG
-public Room findById(Long id) {
-    return roomRepository.findById(id).orElseThrow(...);
-}
-public void softDelete(Long id) {
-    Room room = findById(id);
-    room.setStorageState("DELETED");
-    roomRepository.save(room);
-}
-// ... lặp lại 6 lần nữa cho Seat, Showtime, Booking, ...
-
-// ✅ CÓ dùng pattern — mỗi module chỉ 3 dòng
-public class MovieService extends BaseService<Movie, Long> {
-    @Override
-    protected JpaRepository<Movie, Long> getRepository() {
-        return movieRepository;
-    }
-    // Tự động có: findById, findAll, save, softDelete
-}
-```
-
-#### Lưu ý
-- `findById` filter soft delete bằng Java (`.filter()`), không phải SQL WHERE — đơn giản nhưng nếu bảng có hàng triệu record thì cần dùng `@Where` annotation hoặc custom query
-- `softDelete` gọi `findById` trước → 2 query (SELECT + UPDATE)
-- Subclass có thể override bất kỳ method nào nếu logic CRUD khác chuẩn
-
-#### Khi nào KHÔNG nên dùng?
-- Khi logic CRUD khác nhau hoàn toàn giữa các module
-- Khi chỉ có 1-2 module — tạo abstract class quá sớm là over-engineering
-
----
-
-### 3.2 Cache-aside Pattern — Giải thích chi tiết
+### 3.1 Cache-aside Pattern — Giải thích chi tiết
 
 #### Bài toán đặt ra
 
@@ -350,7 +255,7 @@ Admin gọi updateConfig() vào Server A:
 
 ---
 
-### 3.3 AOP (Aspect-Oriented Programming) — Audit Log
+### 3.2 AOP (Aspect-Oriented Programming) — Audit Log
 
 #### AOP là gì?
 **Cross-cutting concern** = logic cần chạy ở NHIỀU nơi nhưng KHÔNG THUỘC logic chính.
@@ -845,15 +750,6 @@ SELECT id, config_key, config_value, description FROM system_config
 -- SystemConfigService.updateConfig() — admin sửa config
 SELECT * FROM system_config WHERE config_key = 'booking.max_seats'
 UPDATE system_config SET config_value = '5' WHERE id = 1
-
--- BaseService.findById(5)
-SELECT * FROM movies WHERE id = 5
--- Java check: storageState != 'DELETED'
-
--- BaseService.softDelete(5)
-SELECT * FROM movies WHERE id = 5
-UPDATE movies SET storage_state = 'DELETED', version = version + 1,
-       updated_at = ..., updated_by = ... WHERE id = 5 AND version = 0
 
 -- AuditLogService.log() — ghi audit
 INSERT INTO audit_log (table_name, record_id, action, field_name,

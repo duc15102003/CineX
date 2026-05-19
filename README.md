@@ -172,16 +172,14 @@ Không dùng Radix UI. Components viết tay bằng HTML native + Tailwind + cva
 | File | Nội dung |
 |---|---|
 | [auth-explained.md](docs/module-guides/auth-explained.md) | Module Auth: register/login/refresh, JWT, BCrypt |
-| [common-infra-explained.md](docs/module-guides/common-infra-explained.md) | BaseService, AuditLog, SystemConfig |
-| movie-explained.md | _(sẽ tạo khi xong task 005)_ |
+| [common-infra-explained.md](docs/module-guides/common-infra-explained.md) | AuditLog, SystemConfig, Cloudinary/FileUpload |
+| [user-explained.md](docs/module-guides/user-explained.md) | Module User: profile, password, avatar, @PreAuthorize |
+| [movie-explained.md](docs/module-guides/movie-explained.md) | Module Movie: CRUD, N:N genre, Specification Pattern |
+| [room-explained.md](docs/module-guides/room-explained.md) | Module Room: CRUD phòng chiếu |
+| [seat-explained.md](docs/module-guides/seat-explained.md) | Module Seat: sơ đồ ghế, generate, @ManyToOne |
+| [filter-specification-explained.md](docs/module-guides/filter-specification-explained.md) | Filter DTO + Specification — pattern thống nhất cho list API |
 | booking-explained.md | _(sẽ tạo khi xong task 009)_ |
 | payment-explained.md | _(sẽ tạo khi xong task 010)_ |
-
-### task-logs/ — Ghi chep tung task da lam
-
-| File | Nội dung |
-|---|---|
-| [003-common-infra.md](docs/task-logs/003-common-infra.md) | BaseService, AuditLog, SystemConfig, don util, quy tac tham so |
 
 ---
 

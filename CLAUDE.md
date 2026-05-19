@@ -101,15 +101,13 @@ Với MỖI pattern:
 | **Enum** | — | Role, ErrorCode, MovieStatus, ... type-safe | `module/auth/entity/Role.java` |
 | **Mapper (MapStruct)** | Structural | Tự sinh code chuyển User ↔ DTO, compile-time | `module/user/mapper/UserMapper.java` |
 | **Method Security** | Cross-cutting | @PreAuthorize phân quyền ADMIN method-level | `module/user/controller/UserController.java` |
-| **Specification** | Behavioral | Build query WHERE động (search + filter phim) | `module/movie/specification/MovieSpecification.java` |
+| **Specification** | Behavioral | Build query WHERE động cho tất cả list API | `module/*/specification/*Specification.java` |
+| **Filter DTO** | Structural | Nhận search/filter params từ FE, type-safe | `module/*/dto/*Filter.java` |
 
 ### Sẽ áp dụng (theo task)
 
 | Pattern | Nhóm | Task | Mô tả |
 |---|---|---|---|
-| **Template Method** | Behavioral | 004 Movie | BaseService<E> cho CRUD chung, module chỉ override logic riêng |
-| **Specification** | Behavioral | 004 Movie | Build query WHERE động (search + filter) không cần viết nhiều method |
-| **Mapper (MapStruct)** | Structural | 004 Movie | Tự sinh code chuyển Entity ↔ DTO, giảm boilerplate |
 | **Factory** | Creational | 009 Payment | PaymentProcessorFactory trả đúng processor theo method |
 | **Strategy** | Behavioral | 007-008 | PricingStrategy tính giá vé theo nhiều yếu tố |
 | **Observer (Events)** | Behavioral | 008-009 | Spring Events: booking confirmed → email + notification |
