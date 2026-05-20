@@ -24,6 +24,8 @@ public enum ErrorCode {
     ROOM_NOT_FOUND(3001, "Room not found", HttpStatus.NOT_FOUND),
     ROOM_EXISTED(3002, "Room already exists", HttpStatus.CONFLICT),
     SEAT_NOT_FOUND(3003, "Seat not found", HttpStatus.NOT_FOUND),
+    SHOWTIME_NOT_FOUND(4001, "Showtime not found", HttpStatus.NOT_FOUND),
+    SHOWTIME_CONFLICT(4002, "Showtime time conflict", HttpStatus.CONFLICT),
     ;
 
     private final int code;
