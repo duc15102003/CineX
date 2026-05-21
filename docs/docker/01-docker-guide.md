@@ -199,9 +199,19 @@ docker run hello-world
                ▼
 ┌──────────────────────────────────────────────────────────┐
 │                   Container (Đang chạy)                   │
-│    Instance tạo từ image, chạy thật                      │
-│    1 image → tạo nhiều container                         │
-│    VD: cinex-sqlserver-1 (container SQL Server)          │
+│    Instance (bản đang chạy) tạo từ image                 │
+│    1 image → tạo nhiều container (nhiều instance)        │
+│                                                          │
+│    Ví dụ: Khuôn bánh (image) → đúc ra nhiều chiếc bánh  │
+│    Khuôn bánh = 1 cái. Chiếc bánh = bao nhiêu cũng được │
+│    Mỗi chiếc bánh = 1 instance = 1 container             │
+│                                                          │
+│    Image SQL Server (bản thiết kế)                       │
+│        ├── cinex-sqlserver    (instance 1, port 1433)    │
+│        ├── test-sqlserver     (instance 2, port 1434)    │
+│        └── demo-sqlserver     (instance 3, port 1435)    │
+│                                                          │
+│    Giống Java: class User = khuôn, new User() = instance │
 └──────────────────────────────────────────────────────────┘
                │
                │ mount (gắn)
