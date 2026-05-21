@@ -29,6 +29,7 @@ public enum ErrorCode {
     BOOKING_NOT_FOUND(5001, "Booking not found", HttpStatus.NOT_FOUND),
     BOOKING_EXPIRED(5002, "Booking hold has expired", HttpStatus.GONE),
     SEAT_ALREADY_BOOKED(5003, "Seat already booked or held", HttpStatus.CONFLICT),
+    PAYMENT_NOT_FOUND(6001, "Payment not found", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;
