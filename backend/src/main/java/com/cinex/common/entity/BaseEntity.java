@@ -31,7 +31,7 @@ public abstract class BaseEntity {
     private Long version;
 
     @Column(name = "storage_state", length = 20)
-    private String storageState;
+    private String storageState = "ACTIVE";
 
     @CreatedBy
     @Column(updatable = false)
