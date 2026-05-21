@@ -26,6 +26,9 @@ public enum ErrorCode {
     SEAT_NOT_FOUND(3003, "Seat not found", HttpStatus.NOT_FOUND),
     SHOWTIME_NOT_FOUND(4001, "Showtime not found", HttpStatus.NOT_FOUND),
     SHOWTIME_CONFLICT(4002, "Showtime time conflict", HttpStatus.CONFLICT),
+    BOOKING_NOT_FOUND(5001, "Booking not found", HttpStatus.NOT_FOUND),
+    BOOKING_EXPIRED(5002, "Booking hold has expired", HttpStatus.GONE),
+    SEAT_ALREADY_BOOKED(5003, "Seat already booked or held", HttpStatus.CONFLICT),
     ;
 
     private final int code;
