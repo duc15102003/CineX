@@ -108,11 +108,10 @@ Class con có thể **thay thế** class cha mà chương trình vẫn chạy đ
 
 ### Trong CineX
 ```java
-// BaseService<Movie, Long> hoạt động đúng
-// MovieService extends BaseService<Movie, Long> cũng hoạt động đúng ở mọi nơi dùng BaseService
-
-BaseService<Movie, Long> service = new MovieService();  // OK
-service.findById(1L);  // Hoạt động đúng, không lỗi
+// PaymentProcessor interface — class con thay thế được
+PaymentProcessor processor = new MockPaymentProcessor();   // OK
+PaymentProcessor processor = new CashPaymentProcessor();   // OK — thay thế, vẫn chạy đúng
+processor.createPayment(code, amount, desc);               // Cả 2 đều hoạt động
 ```
 
 ---
@@ -185,10 +184,10 @@ Không viết lại code đã có. Lặp 2 lần → tách ra chung.
 
 ### Trong CineX
 ```
-BaseEntity  → id, version, storageState, audit — dùng cho 8 entity
-BaseService → findById, softDelete — dùng cho 8 module
-StringUtil  → removeDiacritics, maskEmail — dùng ở nhiều nơi
-ApiResponse → format response chuẩn — dùng cho mọi API
+BaseEntity   → id, version, storageState, audit — dùng cho 8 entity
+Specification.notDeleted() → filter soft delete — dùng cho mọi module
+ApiResponse  → format response chuẩn — dùng cho mọi API
+Filter DTO   → nhận search/filter params — pattern dùng cho mọi list API
 ```
 
 **Nếu không DRY:** 8 entity × 7 field BaseEntity = 56 field viết lại. Sửa 1 chỗ → sửa 8 chỗ.

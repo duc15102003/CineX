@@ -49,7 +49,8 @@ public class MovieService extends BaseService<Movie, Long> {
 }
 ```
 
-### Dùng ở đâu: Task 003 (Common Infra)
+### Lưu ý
+> Ví dụ trên là **minh họa lý thuyết**. Trong CineX thực tế, BaseService đã được bỏ vì mỗi module cần logic CRUD khác nhau (mapper khác, filter khác). Thay vào đó dùng **Filter DTO + Specification** pattern thống nhất cho tất cả list API.
 
 ---
 

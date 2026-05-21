@@ -64,7 +64,7 @@ git branch -d feature/movie-crud
 ```
 feat: add login API                  ← tính năng mới
 fix: fix duplicate username check    ← sửa bug
-refactor: extract BaseService        ← cải thiện code, không đổi chức năng
+refactor: thống nhất Filter DTO      ← cải thiện code, không đổi chức năng
 docs: update ERD diagram             ← tài liệu
 chore: update dependencies           ← cấu hình, build
 style: format code                   ← format, không đổi logic

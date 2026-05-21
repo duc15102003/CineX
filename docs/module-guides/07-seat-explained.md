@@ -156,12 +156,13 @@ J  [♥♥] [♥♥] [♥♥] [♥♥] [♥♥] [♥♥]                    ← 
 ### @Modifying (Spring Data JPA)
 ```java
 @Modifying
-@Query("DELETE FROM Seat s WHERE s.room.id = :roomId")
-void deleteAllByRoomId(Long roomId);
+@Query("UPDATE Seat s SET s.storageState = 'DELETED' WHERE s.room.id = :roomId AND (s.storageState IS NULL OR s.storageState <> 'DELETED')")
+void softDeleteByRoomId(Long roomId);
 ```
 - Mặc định Spring Data JPA coi mọi `@Query` là SELECT
-- DELETE/UPDATE query phải thêm `@Modifying` → Spring biết đây là write query
+- UPDATE/DELETE query phải thêm `@Modifying` → Spring biết đây là write query
 - Thiếu `@Modifying` → runtime error
+- Dùng **soft delete** (UPDATE storageState) thay vì hard delete (DELETE FROM) → giữ audit trail
 
 ### computeIfAbsent (Java Map)
 ```java
@@ -184,7 +185,7 @@ seatMap.get("A").add(seat);
 |---|---|---|
 | `@ManyToOne(fetch=LAZY)` | Quan hệ nhiều-một, lazy load | Seat → Room |
 | `@JoinColumn(name="room_id")` | Chỉ định cột FK | Seat.room |
-| `@Modifying` | Đánh dấu query DELETE/UPDATE | SeatRepository.deleteAllByRoomId() |
+| `@Modifying` | Đánh dấu query DELETE/UPDATE | SeatRepository.softDeleteByRoomId() |
 | `@Max(26)` | Validation giá trị tối đa | SeatGenerateRequest.totalRows |
 
 ## 7. SQL được sinh ra
@@ -267,7 +268,7 @@ curl -X PUT http://localhost:8088/api/seats/5 \
 2. **LinkedHashMap khác HashMap ở điểm nào? Tại sao cần ở đây?**
    → LinkedHashMap giữ thứ tự insert, HashMap không. FE cần render hàng A trước B trước C → phải giữ thứ tự.
 
-3. **Nếu bỏ `@Modifying` ở method deleteAllByRoomId thì sao?**
+3. **Nếu bỏ `@Modifying` ở method softDeleteByRoomId thì sao?**
    → Spring coi đó là SELECT query → lỗi runtime vì kết quả DELETE không thể map thành entity.
 
 4. **`saveAll(120 seats)` nhanh hơn `save()` 120 lần vì sao?**

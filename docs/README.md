@@ -26,6 +26,7 @@
 | 8 | [backend/06-swagger.md](backend/06-swagger.md) | Swagger UI, test API trực tiếp | Spring Boot |
 | 9 | [backend/08-redis.md](backend/08-redis.md) | Cache, TTL, cache-aside pattern | Spring Boot |
 | 10 | [backend/09-email-cloudinary-qr.md](backend/09-email-cloudinary-qr.md) | Gửi email, upload ảnh, sinh QR code | Spring Boot |
+| 11 | [backend/10-websocket.md](backend/10-websocket.md) | WebSocket real-time: STOMP, SockJS, push ghế thay đổi | Spring Boot |
 
 **Database — đọc sau backend 02:**
 | # | File | Nội dung | Cần biết trước |

@@ -277,15 +277,27 @@ spring.data.redis.host/port     # Kết nối Redis server
 ```java
 .csrf(disable)                  // Tắt CSRF vì dùng JWT (stateless), không dùng cookie session
 .sessionManagement(STATELESS)   // Không tạo session trên server, mỗi request tự mang token
-.requestMatchers(PUBLIC_URLS).permitAll()   // Các URL public: /api/health, /swagger-ui/**, ...
-.anyRequest().authenticated()   // Tất cả URL khác phải có JWT token hợp lệ
-.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-    // Chèn JwtAuthFilter VÀO TRƯỚC filter mặc định của Spring Security
-    // → mỗi request sẽ đi qua JwtAuthFilter trước
 
-passwordEncoder() → BCryptPasswordEncoder
-    // Mã hóa password 1 chiều (không thể giải mã ngược)
-    // Khi login: BCrypt hash password người dùng nhập → so sánh với hash trong DB
+// URL public — không cần token
+.requestMatchers("/api/health").permitAll()
+.requestMatchers("/api/auth/**").permitAll()
+.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+// Chỉ GET public (xem phim, phòng, suất chiếu) — POST/PUT/DELETE cần auth
+.requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
+.requestMatchers(HttpMethod.GET, "/api/genres/**").permitAll()
+.requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+.requestMatchers(HttpMethod.GET, "/api/showtimes/**").permitAll()
+
+.anyRequest().authenticated()   // Còn lại cần JWT token
+
+.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+    // JwtAuthFilter chạy TRƯỚC mỗi request → extract + verify token
+
+// Annotations bật thêm:
+// @EnableMethodSecurity → cho phép @PreAuthorize("hasRole('ADMIN')") trên method
+// @EnableScheduling → cho phép @Scheduled cleanup expired bookings
+// @EnableAsync → cho phép @Async gửi email không block response
 ```
 
 ### `JwtUtil.java` — Xử lý JWT token

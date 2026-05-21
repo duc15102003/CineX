@@ -76,8 +76,12 @@ Client gửi request
 │  (Spring Security built-in) │
 │                             │
 │  /api/auth/** → permitAll   │  ← Cho qua không cần token
-│  /api/movies/** → permitAll │  ← Cho qua (xem phim không cần login)
-│  /* (còn lại) → authenticated│ ← Phải có Authentication
+│  GET /api/movies/** → permitAll│ ← Xem phim (chỉ GET)
+│  GET /api/genres/** → permitAll│ ← Xem thể loại
+│  GET /api/rooms/** → permitAll │ ← Xem phòng
+│  GET /api/showtimes/** → allow │ ← Xem suất chiếu
+│  POST/PUT/DELETE → authenticated│ ← Cần token
+│  /* (còn lại) → authenticated│ ← Cần token
 │                             │
 │  if (cần auth mà chưa có)  │
 │    → trả 401 Unauthorized   │
