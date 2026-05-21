@@ -9,6 +9,11 @@ Module phức tạp nhất — xử lý **luồng đặt vé hoàn chỉnh**:
 
 **Bài toán khó:** 2 user chọn cùng ghế cùng lúc → chỉ 1 người hold được (concurrency).
 
+**Real-time:** Dùng **WebSocket (STOMP)** push cập nhật ghế cho tất cả user đang xem sơ đồ ghế:
+- User A hold ghế E1 → Server push "E1 đã giữ" → User B thấy E1 đổi màu NGAY LẬP TỨC
+- Booking expire → Server push "E1 trống" → tất cả user thấy ghế trả lại
+- Không cần refresh trang, không cần polling
+
 ## 2. Luồng đặt vé — State Machine
 
 ```

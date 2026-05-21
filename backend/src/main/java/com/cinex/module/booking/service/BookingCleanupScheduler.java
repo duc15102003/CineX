@@ -14,12 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * [Scheduled Task Pattern] Chạy mỗi phút, hủy booking HOLDING quá hạn.
- *
- * Ví dụ đời thường: như nhân viên rạp đi kiểm tra "ghế nào giữ quá 10 phút
- * mà chưa thanh toán → trả lại cho người khác đặt".
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -27,11 +21,8 @@ public class BookingCleanupScheduler {
 
     private final BookingRepository bookingRepository;
     private final SystemConfigService systemConfigService;
+    private final SeatWebSocketService seatWebSocketService;
 
-    /**
-     * @Scheduled(fixedRate = 60000) = chạy mỗi 60 giây (1 phút).
-     * Tìm booking HOLDING + createdAt < (now - holdMinutes) → đổi EXPIRED.
-     */
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void cleanupExpiredHolds() {
@@ -45,6 +36,12 @@ public class BookingCleanupScheduler {
             booking.setStatus(BookingStatus.EXPIRED);
             booking.getBookingSeats().forEach(bs -> bs.setStatus(BookingSeatStatus.CANCELLED));
             bookingRepository.save(booking);
+
+            // Real-time: ghế hết hạn → notify AVAILABLE cho tất cả user đang xem
+            List<Long> seatIds = booking.getBookingSeats().stream()
+                    .map(bs -> bs.getSeat().getId()).toList();
+            seatWebSocketService.notifySeatChanged(booking.getShowtime().getId(), seatIds, "AVAILABLE");
+
             log.info("Expired booking {} (held for > {} minutes)", booking.getBookingCode(), holdMinutes);
         }
 

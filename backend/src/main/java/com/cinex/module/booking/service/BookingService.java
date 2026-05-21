@@ -18,6 +18,7 @@ import com.cinex.module.seat.entity.Seat;
 import com.cinex.module.seat.entity.SeatType;
 import com.cinex.module.seat.repository.SeatRepository;
 import com.cinex.module.showtime.entity.Showtime;
+import com.cinex.module.booking.service.SeatWebSocketService;
 import com.cinex.module.showtime.repository.ShowtimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final IdTrackerService idTrackerService;
     private final SystemConfigService systemConfigService;
+    private final SeatWebSocketService seatWebSocketService;
 
     /**
      * Hold ghế — tạo booking HOLDING, lock ghế 10 phút.
@@ -135,6 +137,9 @@ public class BookingService {
         log.info("User {} held {} seats for showtime {}, booking {}",
                 user.getUsername(), seats.size(), showtime.getId(), bookingCode);
 
+        // Real-time: notify tất cả user đang xem sơ đồ ghế
+        seatWebSocketService.notifySeatChanged(showtime.getId(), request.getSeatIds(), "HELD");
+
         return HoldSeatsResponse.builder()
                 .bookingId(booking.getId())
                 .bookingCode(bookingCode)
@@ -206,6 +211,12 @@ public class BookingService {
         bookingRepository.save(booking);
 
         log.info("Booking {} cancelled by user", booking.getBookingCode());
+
+        // Real-time: ghế trả lại → notify AVAILABLE
+        List<Long> seatIds = booking.getBookingSeats().stream()
+                .map(bs -> bs.getSeat().getId()).toList();
+        seatWebSocketService.notifySeatChanged(booking.getShowtime().getId(), seatIds, "AVAILABLE");
+
         return toBookingResponse(booking);
     }
 

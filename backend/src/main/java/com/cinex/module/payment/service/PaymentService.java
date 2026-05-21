@@ -12,6 +12,7 @@ import com.cinex.module.payment.dto.PaymentResponse;
 import com.cinex.module.payment.entity.Payment;
 import com.cinex.module.payment.entity.PaymentStatus;
 import com.cinex.module.payment.processor.PaymentProcessor;
+import com.cinex.module.booking.service.SeatWebSocketService;
 import com.cinex.module.payment.processor.PaymentProcessorFactory;
 import com.cinex.module.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -33,6 +35,7 @@ public class PaymentService {
     private final PaymentProcessorFactory processorFactory;
     private final IdTrackerService idTrackerService;
     private final ApplicationEventPublisher eventPublisher;
+    private final SeatWebSocketService seatWebSocketService;
 
     /**
      * Tạo payment → gọi PaymentProcessor (Factory+Strategy) → trả URL.
@@ -130,6 +133,11 @@ public class PaymentService {
 
             // Publish event → listener gửi email (async)
             eventPublisher.publishEvent(new PaymentCompletedEvent(this, payment));
+
+            // Real-time: ghế chuyển từ HELD → BOOKED
+            List<Long> seatIds = booking.getBookingSeats().stream()
+                    .map(bs -> bs.getSeat().getId()).toList();
+            seatWebSocketService.notifySeatChanged(booking.getShowtime().getId(), seatIds, "BOOKED");
 
             log.info("Payment completed: {} → Booking {} confirmed",
                     transactionCode, booking.getBookingCode());

@@ -9,17 +9,19 @@ CineX sử dụng **Layered Architecture** (kiến trúc phân lớp) — một 
 ```
 Client (Browser)
     │
-    ▼
-Controller Layer   ← Nhận request, validate input, trả response
+    ├── HTTP REST ──▶ Controller Layer ← Nhận request, validate input, trả response
+    │                       │
+    │                       ▼
+    │                 Service Layer    ← Xử lý business logic
+    │                       │
+    │                       ▼
+    │                 Repository Layer ← Truy vấn database (Spring Data JPA)
+    │                       │
+    │                       ▼
+    │                 Database (SQL Server)
     │
-    ▼
-Service Layer      ← Xử lý business logic
-    │
-    ▼
-Repository Layer   ← Truy vấn database (Spring Data JPA)
-    │
-    ▼
-Database (SQL Server)
+    └── WebSocket ◀─ SeatWebSocketService ← Real-time push (ghế thay đổi trạng thái)
+         (STOMP)     Server chủ động gửi → client nhận ngay, không cần refresh
 ```
 
 ### Controller — Lớp tiếp nhận request
