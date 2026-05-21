@@ -167,23 +167,33 @@ Không dùng Radix UI. Components viết tay bằng HTML native + Tailwind + cva
 |---|---|
 | [01-docker-guide.md](docs/docker/01-docker-guide.md) | Docker từ zero — Image, Container, Volume, Dockerfile, docker-compose |
 
-### module-guides/ — Giải thích từng module
+### module-guides/ — Giải thích từng module (đánh số theo thứ tự học)
 
+| # | File | Nội dung |
+|---|---|---|
+| 01 | [01-common-infra-explained.md](docs/module-guides/01-common-infra-explained.md) | AuditLog, SystemConfig, Cloudinary/FileUpload |
+| 02 | [02-auth-explained.md](docs/module-guides/02-auth-explained.md) | Auth: login, register, JWT, BCrypt |
+| 03 | [03-user-explained.md](docs/module-guides/03-user-explained.md) | User: profile, password, avatar, @PreAuthorize |
+| 04 | [04-filter-specification-explained.md](docs/module-guides/04-filter-specification-explained.md) | Filter DTO + Specification — pattern dùng chung |
+| 05 | [05-movie-explained.md](docs/module-guides/05-movie-explained.md) | Movie: CRUD, N:N genre, search/filter |
+| 06 | [06-room-explained.md](docs/module-guides/06-room-explained.md) | Room: CRUD phòng chiếu |
+| 07 | [07-seat-explained.md](docs/module-guides/07-seat-explained.md) | Seat: sơ đồ ghế, generate, @ManyToOne |
+| 08 | [08-showtime-explained.md](docs/module-guides/08-showtime-explained.md) | Showtime: suất chiếu, check trùng giờ |
+| 09 | [09-booking-explained.md](docs/module-guides/09-booking-explained.md) | Booking: hold ghế, confirm, cancel, QR, scheduler |
+| — | payment-explained.md | _(sẽ tạo khi xong task 010)_ |
+
+### Tham khảo thêm
 | File | Nội dung |
 |---|---|
-| [auth-explained.md](docs/module-guides/auth-explained.md) | Module Auth: register/login/refresh, JWT, BCrypt |
-| [common-infra-explained.md](docs/module-guides/common-infra-explained.md) | AuditLog, SystemConfig, Cloudinary/FileUpload |
-| [user-explained.md](docs/module-guides/user-explained.md) | Module User: profile, password, avatar, @PreAuthorize |
-| [movie-explained.md](docs/module-guides/movie-explained.md) | Module Movie: CRUD, N:N genre, Specification Pattern |
-| [room-explained.md](docs/module-guides/room-explained.md) | Module Room: CRUD phòng chiếu |
-| [seat-explained.md](docs/module-guides/seat-explained.md) | Module Seat: sơ đồ ghế, generate, @ManyToOne |
-| [filter-specification-explained.md](docs/module-guides/filter-specification-explained.md) | Filter DTO + Specification — pattern thống nhất cho list API |
-| booking-explained.md | _(sẽ tạo khi xong task 009)_ |
-| payment-explained.md | _(sẽ tạo khi xong task 010)_ |
+| [docs/README.md](docs/README.md) | **Lộ trình đọc tài liệu** (đọc cái gì trước cái gì) |
+| [docs/glossary.md](docs/glossary.md) | Từ điển thuật ngữ (50+ thuật ngữ A-Z) |
+| [docs/common-mistakes.md](docs/common-mistakes.md) | 10 lỗi hay gặp khi code + cách fix |
 
 ---
 
 ## Thứ tự đọc gợi ý
+
+> Chi tiết hơn: xem [docs/README.md](docs/README.md)
 
 1. `docs/project/business-flow.md` — Hiểu dự án làm gì
 2. `docs/project/setup.md` — Cài đặt chạy thử
