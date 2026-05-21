@@ -269,6 +269,8 @@ backend/src/main/java/com/cinex/
 ```
 
 ### Frontend
+- **Font chữ: Inter** — dùng cho toàn bộ giao diện, không dùng font khác
+
 ```
 frontend/src/
 ├── api/axios.ts                     # HTTP client + JWT interceptor
