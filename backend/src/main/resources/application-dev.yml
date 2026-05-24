@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:sqlserver://${DB_HOST:localhost}:${DB_PORT:1433};databaseName=${DB_NAME:cinex};encrypt=false;trustServerCertificate=true
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:CineX@2026}
+    url: jdbc:sqlserver://localhost:1433;databaseName=cinex;encrypt=false;trustServerCertificate=true
+    username: sa
+    password: 123456
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:
